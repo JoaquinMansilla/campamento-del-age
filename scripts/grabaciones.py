@@ -143,7 +143,8 @@ def leer(grabacion, perfiles):
 
     minutos = ms / 60000
     if minutos < 1:
-        return None
+        # Partida abandonada apenas empezó: no hay nada que medir
+        return round(ms / 1000), {}, []
     jugadores = {}
     for numero, perfil in numeros.items():
         s = stats[numero]
@@ -157,11 +158,15 @@ def leer(grabacion, perfiles):
 
 
 def analizar(grabaciones, perfiles):
-    lecturas = [l for l in (leer(g, perfiles) for g in grabaciones) if l and l[1]]
+    lecturas = [leer(g, perfiles) for g in grabaciones]
     if not lecturas:
         return None
     # La grabación más larga es la del que se quedó hasta el final
     segundos, jugadores, _ = max(lecturas, key=lambda l: l[0])
+    if not jugadores:
+        # Se guarda igual, sin jugadores, para no volver a bajar las grabaciones en cada corrida
+        return {'version': VERSION, 'segundosDeJuego': segundos, 'grabaciones': len(lecturas), 'corta': True, 'chat': []}
+    lecturas = [l for l in lecturas if l[1]]
     vistos = {}
     for _, _, chat in lecturas:
         for m in chat:
@@ -195,7 +200,7 @@ def main():
         if not detalle:
             print(f"{fila['id']}: sin grabación utilizable ({len(grabaciones)} bajadas)")
             continue
-        print(f"{fila['id']}: {detalle['grabaciones']} grabaciones, {len(detalle['jugadores'])} jugadores, {len(detalle['chat'])} mensajes")
+        print(f"{fila['id']}: {detalle['grabaciones']} grabaciones, {len(detalle.get('jugadores', {}))} jugadores, {len(detalle['chat'])} mensajes")
         if token:
             pedir(f'{url}/rest/v1/rpc/guardar_detalle', {'p_token': token, 'p_id': fila['id'], 'p_detalle': detalle}, supabase)
         else:

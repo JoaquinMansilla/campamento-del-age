@@ -93,7 +93,8 @@ def main():
     clan = {m['id']: m['nick'] for m in json.loads((RAIZ / 'campamento.json').read_text())['clan']['miembros']}
     token = os.environ.get('SYNC_TOKEN')
 
-    filtro = urllib.parse.urlencode({'select': 'id,datos,detalle', 'detalle': 'not.is.null', 'cronica': 'is.null',
+    # Las partidas abandonadas al empezar no tienen jugadores en el detalle y no llevan crónica
+    filtro = urllib.parse.urlencode({'select': 'id,datos,detalle', 'detalle->jugadores': 'not.is.null', 'cronica': 'is.null',
                                      'order': 'inicio.desc', 'limit': str(MAXIMO_POR_CORRIDA)})
     pendientes = json.loads(pedir(f'{url}/rest/v1/partidas?{filtro}', cabeceras=supabase))
     for fila in pendientes:
