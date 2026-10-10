@@ -1,5 +1,5 @@
-// Acceso a datos: las partidas vienen de data/partidas.json (lo genera scripts/sincronizar.mjs),
-// las comidas y actividades de Supabase.
+// Acceso a datos: todo vive en Supabase. Las partidas las escribe scripts/sincronizar.mjs;
+// las comidas y actividades se cargan desde el sitio.
 const MOMENTOS = ['desayuno', 'almuerzo', 'merienda', 'cena'];
 
 const hayBase = () => Boolean(window.CONFIG && CONFIG.supabaseUrl && CONFIG.supabaseAnonKey && window.supabase);
@@ -23,11 +23,15 @@ async function leerJson(ruta) {
 }
 
 async function cargarPartidas() {
-  const [campamento, datos] = await Promise.all([leerJson('campamento.json'), leerJson('data/partidas.json')]);
+  if (!hayBase()) throw new Error('falta configurar Supabase en config.js');
+  const [campamento, filas] = await Promise.all([
+    leerJson('campamento.json'),
+    consultar(base().from('partidas').select('datos').order('inicio')),
+  ]);
   const miembros = campamento.clan.miembros.map((m, orden) => ({ ...m, orden }));
   const porId = new Map(miembros.map((m) => [m.id, m]));
 
-  const partidas = datos.partidas.map((p) => {
+  const partidas = filas.map(({ datos: p }) => {
     const clan = p.jugadores.filter((j) => porId.has(j.id)).map((j) => ({ ...j, miembro: porId.get(j.id) }));
     const equipos = new Set(clan.map((j) => j.equipo));
     // Si hay miembros del clan en los dos bandos, la partida no cuenta para el récord del clan
@@ -44,7 +48,7 @@ async function cargarPartidas() {
       resultado,
     };
   });
-  return { campamento, miembros, partidas, actualizado: datos.actualizado ? new Date(datos.actualizado) : null };
+  return { campamento, miembros, partidas };
 }
 
 async function cargarCampamento() {

@@ -179,7 +179,7 @@ h2 {
   clip-path: polygon(0 0, 100% 0, 100% 62%, 50% 100%, 0 62%);
 }
 .guerrero-tag { font-size: 11px; letter-spacing: 0.06em; color: var(--tinta-3); }
-.guerrero-nombre { font-family: var(--titulos); font-weight: 700; font-size: 17px; overflow-wrap: anywhere; }
+.guerrero-nombre { font-family: var(--titulos); font-weight: 700; font-size: 15px; overflow-wrap: anywhere; }
 .guerrero-elo { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 4px 8px; }
 .elo-delta { font-size: 26px; font-weight: 600; line-height: 1; }
 .elo-delta span { font-size: 15px; }

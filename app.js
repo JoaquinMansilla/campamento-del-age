@@ -18,14 +18,6 @@ function duracion(min) {
   return h ? `${h} h ${m} min` : `${m} min`;
 }
 
-function haceCuanto(d) {
-  const min = Math.round((Date.now() - d) / 60000);
-  if (min < 2) return 'recién';
-  if (min < 60) return `hace ${min} min`;
-  if (min < 1440) return `hace ${Math.round(min / 60)} h`;
-  return `el ${d.toLocaleDateString('es-AR', { day: 'numeric', month: 'long' })}`;
-}
-
 const imagen = (url, clase, alt = '') =>
   (url ? `<img class="${clase}" src="${esc(url)}" alt="${esc(alt)}" loading="lazy">` : `<span class="${clase} sin-imagen"></span>`);
 
@@ -287,13 +279,12 @@ async function iniciar() {
     for (const s of document.querySelectorAll('[data-partidas]')) s.hidden = true;
     return;
   }
-  const { campamento, miembros, partidas, actualizado } = datos;
+  const { campamento, miembros, partidas } = datos;
   window.MIEMBROS = miembros;
   $('titulo').textContent = campamento.nombre;
   $('anio').textContent = campamento.anio;
   $('tag').textContent = campamento.clan.tag;
   document.title = `${campamento.nombre} ${campamento.anio}`;
-  if (actualizado) $('actualizado').textContent = `Partidas actualizadas ${haceCuanto(actualizado)}.`;
   document.dispatchEvent(new Event('miembros-listos'));
 
   if (!partidas.length) {

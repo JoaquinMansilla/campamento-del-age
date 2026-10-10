@@ -21,14 +21,16 @@ jobs:
         with:
           node-version: 22
       - run: node scripts/sincronizar.mjs
-      - name: Guardar cambios
+        env:
+          SYNC_TOKEN: ${{ secrets.SYNC_TOKEN }}
+      - name: Guardar catálogo si aprendió algo nuevo
         run: |
           git add data
           if git diff --cached --quiet; then
-            echo "Sin partidas nuevas."
+            echo "Catálogo sin cambios."
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -m "Actualizar partidas del campamento"
+          git commit -m "Actualizar catálogo de civilizaciones y mapas"
           git push

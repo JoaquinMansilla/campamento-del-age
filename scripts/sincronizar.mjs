@@ -1,8 +1,9 @@
-// Trae las partidas del clan desde el backend de World's Edge (el que usa el juego) y las guarda en data/partidas.json.
+// Trae las partidas del clan desde el backend de World's Edge (el que usa el juego) y las guarda en Supabase.
 // Referencia de la API: https://github.com/ustacode/aoe2-apis
 //
-//   node scripts/sincronizar.mjs             sincroniza las partidas del campamento
-//   node scripts/sincronizar.mjs --catalogo  además reconstruye data/catalogo.json con todo el historial disponible
+//   SYNC_TOKEN=... node scripts/sincronizar.mjs   sincroniza las partidas del campamento
+//   node scripts/sincronizar.mjs                  sin token solo muestra lo que encontró
+//   node scripts/sincronizar.mjs --catalogo       además reconstruye data/catalogo.json con todo el historial disponible
 import { readFile, writeFile } from 'node:fs/promises';
 import { inflateSync } from 'node:zlib';
 
@@ -81,7 +82,6 @@ function normalizar(cruda, alias, catalogo) {
 
 const campamento = await leer('campamento.json');
 const catalogo = await leer('data/catalogo.json', { civs: {}, mapas: {} });
-const guardado = await leer('data/partidas.json', { partidas: [] });
 const ids = campamento.clan.miembros.map((m) => m.id);
 const clan = new Set(ids);
 
@@ -110,12 +110,23 @@ if (reconstruir || faltaAlgo) {
   }
 }
 
-// Se conservan las partidas ya guardadas: World's Edge solo devuelve el historial reciente
-const todas = new Map(guardado.partidas.map((p) => [p.id, p]));
-for (const p of delCampamento) todas.set(p.id, normalizar(p, alias, catalogo));
-const partidas = [...todas.values()].sort((a, b) => a.inicio.localeCompare(b.inicio));
-
-const nombres = Object.fromEntries(ids.map((id) => [id, alias.get(id) || null]));
-const cambio = JSON.stringify([guardado.partidas, guardado.nombres]) !== JSON.stringify([partidas, nombres]);
-if (cambio) await escribir('data/partidas.json', { actualizado: new Date().toISOString(), nombres, partidas });
-console.log(`${partidas.length} partidas del campamento (${cambio ? 'con cambios' : 'sin cambios'}).`);
+const partidas = delCampamento.map((p) => normalizar(p, alias, catalogo));
+const token = process.env.SYNC_TOKEN;
+if (!token) {
+  console.log(`${partidas.length} partidas del campamento encontradas. Sin SYNC_TOKEN no se guarda nada.`);
+} else if (partidas.length) {
+  // La URL y la anon key son las mismas que usa el sitio; el token es lo que habilita la escritura
+  const config = await readFile(new URL('config.js', RAIZ), 'utf8');
+  const [, url] = config.match(/supabaseUrl:\s*'([^']+)'/);
+  const [, anonKey] = config.match(/supabaseAnonKey:\s*'([^']+)'/);
+  const res = await fetch(`${url}/rest/v1/rpc/guardar_partidas`, {
+    method: 'POST',
+    headers: { apikey: anonKey, Authorization: `Bearer ${anonKey}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ p_token: token, p_partidas: partidas }),
+    signal: AbortSignal.timeout(30000),
+  });
+  if (!res.ok) throw new Error(`Supabase respondió ${res.status}: ${await res.text()}`);
+  console.log(`${await res.json()} partidas del campamento guardadas en Supabase.`);
+} else {
+  console.log('Todavía no hay partidas del campamento.');
+}
