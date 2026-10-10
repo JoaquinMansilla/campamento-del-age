@@ -26,12 +26,14 @@ async function cargarPartidas() {
   if (!hayBase()) throw new Error('falta configurar Supabase en config.js');
   const [campamento, filas] = await Promise.all([
     leerJson('campamento.json'),
-    consultar(base().from('partidas').select('datos').order('inicio')),
+    consultar(base().from('partidas').select('datos, detalle').order('inicio')),
   ]);
   const miembros = campamento.clan.miembros.map((m, orden) => ({ ...m, orden }));
   const porId = new Map(miembros.map((m) => [m.id, m]));
 
-  const partidas = filas.map(({ datos: p }) => {
+  const partidas = filas.map(({ datos, detalle }) => {
+    // El detalle (APM, edades, producción) sale de la grabación y puede no estar todavía
+    const p = { ...datos, jugadores: datos.jugadores.map((j) => ({ ...j, detalle: detalle?.jugadores?.[j.id] || null })) };
     const clan = p.jugadores.filter((j) => porId.has(j.id)).map((j) => ({ ...j, miembro: porId.get(j.id) }));
     const equipos = new Set(clan.map((j) => j.equipo));
     // Si hay miembros del clan en los dos bandos, la partida no cuenta para el récord del clan
@@ -46,6 +48,7 @@ async function cargarPartidas() {
       aliados: p.jugadores.filter((j) => !porId.has(j.id) && j.equipo === equipoClan),
       rivales: p.jugadores.filter((j) => !porId.has(j.id) && j.equipo !== equipoClan),
       resultado,
+      tieneDetalle: Boolean(detalle),
     };
   });
   return { campamento, miembros, partidas };

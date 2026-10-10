@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="estilos.css?v=4">
+  <link rel="stylesheet" href="estilos.css?v=5">
 </head>
 <body>
   <main class="pagina">
@@ -29,11 +29,11 @@
       <div class="guerreros" id="guerreros"></div>
     </section>
 
-    <section class="panel" data-partidas>
-      <h2>La campaña, partida a partida</h2>
-      <p class="nota">Puntos de ELO ganados o perdidos por cada uno desde que empezó el campamento.</p>
-      <div class="leyenda" id="leyenda-elo"></div>
-      <div class="grafico-linea" id="grafico-elo"></div>
+    <section class="panel" data-partidas id="panel-apm">
+      <h2>Velocidad de manos</h2>
+      <p class="nota">Acciones por minuto de cada uno en cada partida, sacadas de la grabación.</p>
+      <div class="leyenda" id="leyenda-apm"></div>
+      <div class="grafico-linea" id="grafico-apm"></div>
     </section>
 
     <div class="dos-columnas" data-partidas>
@@ -131,9 +131,9 @@
 
   <div class="tooltip" id="tooltip" hidden></div>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
-  <script src="config.js?v=4"></script>
-  <script src="datos.js?v=4"></script>
-  <script src="app.js?v=4"></script>
-  <script src="carga.js?v=4"></script>
+  <script src="config.js?v=5"></script>
+  <script src="datos.js?v=5"></script>
+  <script src="app.js?v=5"></script>
+  <script src="carga.js?v=5"></script>
 </body>
 </html>

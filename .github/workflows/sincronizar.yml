@@ -23,6 +23,15 @@ jobs:
       - run: node scripts/sincronizar.mjs
         env:
           SYNC_TOKEN: ${{ secrets.SYNC_TOKEN }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Estadísticas de las grabaciones
+        run: |
+          pip install --quiet mgz==1.8.51
+          python scripts/grabaciones.py
+        env:
+          SYNC_TOKEN: ${{ secrets.SYNC_TOKEN }}
       - name: Guardar catálogo si aprendió algo nuevo
         run: |
           git add data

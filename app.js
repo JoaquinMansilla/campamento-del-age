@@ -1,8 +1,8 @@
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const pct = (g, pj) => (pj ? Math.round((g / pj) * 100) : 0);
-const signo = (n) => (n > 0 ? `+${n}` : String(n).replace('-', '−'));
 const plural = (n, uno, muchos) => `${n} ${n === 1 ? uno : muchos}`;
+const promedio = (xs) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : null);
 const colorDe = (miembro) => `var(--serie-${miembro.orden + 1})`;
 
 function fechaLarga(fecha) {
@@ -18,6 +18,14 @@ function duracion(min) {
   return h ? `${h} h ${m} min` : `${m} min`;
 }
 
+// Tiempo de juego en minutos:segundos, como el reloj de la partida
+function reloj(segundos) {
+  if (segundos == null) return '—';
+  const s = Math.round(segundos);
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+}
+const numero = (n) => (n == null ? '—' : Math.round(n));
+
 const imagen = (url, clase, alt = '') =>
   (url ? `<img class="${clase}" src="${esc(url)}" alt="${esc(alt)}" loading="lazy">` : `<span class="${clase} sin-imagen"></span>`);
 
@@ -32,12 +40,12 @@ function mostrarTooltip(html, x, y) {
 const ocultarTooltip = () => { $('tooltip').hidden = true; };
 
 function calcular(miembros, partidas) {
-  const guerreros = new Map(miembros.map((m) => [m.id, { miembro: m, pj: 0, g: 0, elo: 0, rating: null, racha: 0, civs: new Map(), serie: [0] }]));
+  const guerreros = new Map(miembros.map((m) => [m.id, { miembro: m, pj: 0, g: 0, racha: 0, civs: new Map(), detalles: [], serie: [] }]));
   const civs = new Map();
   const mapas = new Map();
   const clan = { pj: 0, g: 0, p: 0, internas: 0, minutos: 0, racha: 0 };
 
-  for (const p of partidas) {
+  partidas.forEach((p, i) => {
     clan.pj++;
     clan.minutos += p.minutos;
     if (p.resultado === 'interna') clan.internas++;
@@ -57,9 +65,8 @@ function calcular(miembros, partidas) {
       const s = guerreros.get(j.id);
       s.pj++;
       if (j.gano) s.g++;
-      s.elo += j.diff || 0;
-      if (j.rating != null) s.rating = j.rating;
       s.racha = j.gano ? Math.max(s.racha, 0) + 1 : Math.min(s.racha, 0) - 1;
+      if (j.detalle) { s.detalles.push(j.detalle); s.serie[i] = j.detalle.eapm; }
       const propia = s.civs.get(j.civ) || { nombre: j.civ, img: j.civImg, pj: 0 };
       propia.pj++;
       s.civs.set(j.civ, propia);
@@ -70,13 +77,22 @@ function calcular(miembros, partidas) {
       c.quienes.add(j.miembro.nick);
       civs.set(j.civ, c);
     }
-    // Quien no jugó esta partida mantiene su ELO acumulado
-    for (const s of guerreros.values()) s.serie.push(s.elo);
-  }
+  });
 
+  const media = (s, campo) => promedio(s.detalles.map((d) => d[campo]).filter((v) => v != null));
   const lista = [...guerreros.values()]
-    .map((s) => ({ ...s, p: s.pj - s.g, pct: pct(s.g, s.pj), civFav: [...s.civs.values()].sort((a, b) => b.pj - a.pj)[0] }))
-    .sort((a, b) => b.elo - a.elo || b.pct - a.pct || a.miembro.orden - b.miembro.orden);
+    .map((s) => ({
+      ...s,
+      p: s.pj - s.g,
+      pct: pct(s.g, s.pj),
+      civFav: [...s.civs.values()].sort((a, b) => b.pj - a.pj)[0],
+      eapm: media(s, 'eapm'),
+      feudal: media(s, 'feudal'),
+      castillos: media(s, 'castillos'),
+      aldeanos: media(s, 'aldeanos'),
+      tropas: media(s, 'tropas'),
+    }))
+    .sort((a, b) => b.pct - a.pct || b.g - a.g || (b.eapm || 0) - (a.eapm || 0) || a.miembro.orden - b.miembro.orden);
 
   return {
     clan,
@@ -89,14 +105,14 @@ function calcular(miembros, partidas) {
 function pintarMarcador(st) {
   const { clan } = st;
   const decididas = clan.g + clan.p;
-  const mejor = st.guerreros.find((s) => s.pj);
+  const rapido = [...st.guerreros].filter((s) => s.eapm != null).sort((a, b) => b.eapm - a.eapm)[0];
   const racha = clan.racha > 0 ? plural(clan.racha, 'victoria seguida', 'victorias seguidas')
     : clan.racha < 0 ? plural(-clan.racha, 'derrota seguida', 'derrotas seguidas') : 'Sin racha';
   const fichas = [
     ['Partidas', clan.pj, clan.internas ? `${plural(clan.internas, 'interna', 'internas')} entre el clan` : 'jugadas en equipo'],
     ['Efectividad', decididas ? `${pct(clan.g, decididas)}%` : '—', racha],
     ['Tiempo en batalla', duracion(clan.minutos), `${duracion(clan.minutos / clan.pj)} por partida`],
-    ['Mejor guerrero', mejor.miembro.nick, `${signo(mejor.elo)} de ELO`],
+    rapido ? ['Manos más rápidas', rapido.miembro.nick, `${numero(rapido.eapm)} APM de promedio`] : ['Manos más rápidas', '—', 'Esperando las grabaciones'],
   ];
   $('marcador').innerHTML = `
     <div class="record">
@@ -122,28 +138,18 @@ function pintarMarcador(st) {
 function pintarGuerreros(st, tag) {
   const lider = st.guerreros[0];
   $('guerreros').innerHTML = st.guerreros.map((s) => {
-    if (!s.pj) {
-      return `<article class="guerrero ausente">
-        <div class="guerrero-cabeza">
-          <span class="escudo" style="--color:${colorDe(s.miembro)}">${esc(s.miembro.nick[0])}</span>
-          <div><div class="guerrero-tag">${esc(tag)}</div><div class="guerrero-nombre">${esc(s.miembro.nick)}</div></div>
-        </div>
-        <p class="vacio">Todavía no entró en batalla.</p>
-      </article>`;
-    }
+    const cabeza = (extra = '') => `<div class="guerrero-cabeza">
+        <span class="escudo" style="--color:${colorDe(s.miembro)}">${esc(s.miembro.nick[0])}</span>
+        <div><div class="guerrero-tag">${esc(tag)}${extra}</div><div class="guerrero-nombre">${esc(s.miembro.nick)}</div></div>
+      </div>`;
+    if (!s.pj) return `<article class="guerrero ausente">${cabeza()}<p class="vacio">Todavía no entró en batalla.</p></article>`;
     const racha = s.racha > 0 ? `<span class="victoria">▲</span> ${plural(s.racha, 'ganada', 'ganadas')}`
       : `<span class="derrota">▼</span> ${plural(-s.racha, 'perdida', 'perdidas')}`;
     return `<article class="guerrero">
-      <div class="guerrero-cabeza">
-        <span class="escudo" style="--color:${colorDe(s.miembro)}">${esc(s.miembro.nick[0])}</span>
-        <div>
-          <div class="guerrero-tag">${esc(tag)}${s === lider && s.elo > 0 ? ' · 👑 Rey del campamento' : ''}</div>
-          <div class="guerrero-nombre">${esc(s.miembro.nick)}</div>
-        </div>
-      </div>
-      <div class="guerrero-elo">
-        <span class="elo-delta"><span class="${s.elo < 0 ? 'derrota' : 'victoria'}">${s.elo < 0 ? '▼' : '▲'}</span> ${signo(s.elo)}</span>
-        <span class="elo-actual">ELO ${s.rating ?? '—'}</span>
+      ${cabeza(s === lider && s.g > 0 ? ' · 👑 Rey del campamento' : '')}
+      <div class="guerrero-apm">
+        <span class="apm-valor">${numero(s.eapm)}</span>
+        <span class="apm-rotulo">APM promedio</span>
       </div>
       <div class="medidor-fila">
         <div class="medidor"><div class="medidor-relleno" style="width:${s.pct}%"></div></div>
@@ -153,6 +159,9 @@ function pintarGuerreros(st, tag) {
         <div><dt>Partidas</dt><dd>${s.pj}</dd></div>
         <div><dt>Ganadas</dt><dd>${s.g}</dd></div>
         <div><dt>Perdidas</dt><dd>${s.p}</dd></div>
+        <div><dt>Feudal</dt><dd>${reloj(s.feudal)}</dd></div>
+        <div><dt>Castillos</dt><dd>${reloj(s.castillos)}</dd></div>
+        <div><dt>Aldeanos</dt><dd>${numero(s.aldeanos)}</dd></div>
       </dl>
       <div class="guerrero-pie">
         <span>${imagen(s.civFav.img, 'civ')} ${esc(s.civFav.nombre)}</span>
@@ -182,58 +191,63 @@ function pintarBarras(id, items, valorTexto, tooltip) {
   cont.onmouseleave = ocultarTooltip;
 }
 
-function pasoLindo(rango) {
-  return [5, 10, 20, 25, 50, 100, 200, 500].find((p) => rango / p <= 5) || 1000;
-}
-
-function pintarElo(partidas, st) {
-  const series = st.guerreros.filter((s) => s.pj).sort((a, b) => a.miembro.orden - b.miembro.orden);
-  $('leyenda-elo').innerHTML = series
+// APM de cada jugador en cada partida. Los huecos son partidas que no jugó o sin grabación.
+function pintarApm(partidas, st) {
+  const series = st.guerreros.filter((s) => s.detalles.length).sort((a, b) => a.miembro.orden - b.miembro.orden);
+  $('panel-apm').hidden = !series.length;
+  if (!series.length) return;
+  $('leyenda-apm').innerHTML = series
     .map((s) => `<span><span class="punto" style="background:${colorDe(s.miembro)}"></span>${esc(s.miembro.nick)}</span>`).join('');
 
-  const cont = $('grafico-elo');
+  const cont = $('grafico-apm');
   const n = partidas.length;
   const W = Math.max(cont.clientWidth, 280);
   const H = Math.min(320, Math.max(220, W * 0.4));
-  const m = { arriba: 14, der: 18, abajo: 34, izq: 40 };
-  const valores = series.flatMap((s) => s.serie);
-  const paso = pasoLindo(Math.max(...valores, 0) - Math.min(...valores, 0) || 1);
-  const minY = Math.floor(Math.min(...valores, 0) / paso) * paso;
-  const maxY = Math.max(Math.ceil(Math.max(...valores, 0) / paso) * paso, minY + paso);
-  const x = (i) => m.izq + (i / n) * (W - m.izq - m.der);
-  const y = (v) => H - m.abajo - ((v - minY) / (maxY - minY)) * (H - m.arriba - m.abajo);
+  const m = { arriba: 14, der: 18, abajo: 34, izq: 36 };
+  const paso = [10, 20, 25, 50, 100].find((p) => Math.max(...series.flatMap((s) => s.serie.filter((v) => v != null))) / p <= 5) || 200;
+  const maxY = Math.ceil(Math.max(...series.flatMap((s) => s.serie.filter((v) => v != null))) / paso) * paso;
+  const x = (i) => (n === 1 ? (m.izq + W - m.der) / 2 : m.izq + (i / (n - 1)) * (W - m.izq - m.der));
+  const y = (v) => H - m.abajo - (v / maxY) * (H - m.arriba - m.abajo);
 
   let grilla = '';
-  for (let v = minY; v <= maxY; v += paso) {
-    grilla += `<line class="${v === 0 ? 'linea-eje' : 'linea-grilla'}" x1="${m.izq}" x2="${W - m.der}" y1="${y(v)}" y2="${y(v)}"/>
-      <text x="${m.izq - 8}" y="${y(v) + 4}" text-anchor="end">${v === 0 ? 0 : signo(v)}</text>`;
+  for (let v = 0; v <= maxY; v += paso) {
+    grilla += `<line class="${v ? 'linea-grilla' : 'linea-eje'}" x1="${m.izq}" x2="${W - m.der}" y1="${y(v)}" y2="${y(v)}"/>
+      <text x="${m.izq - 8}" y="${y(v) + 4}" text-anchor="end">${v}</text>`;
   }
   const pasoX = Math.max(1, Math.ceil(n / (W / 60)));
-  for (let i = pasoX; i <= n; i += pasoX) {
-    grilla += `<text x="${x(i)}" y="${H - m.abajo + 16}" text-anchor="middle">${i}</text>`;
+  for (let i = 0; i < n; i += pasoX) {
+    grilla += `<text x="${x(i)}" y="${H - m.abajo + 16}" text-anchor="middle">${i + 1}</text>`;
   }
   grilla += `<text x="${(m.izq + W - m.der) / 2}" y="${H - 2}" text-anchor="middle">Partida n.º</text>`;
 
-  const lineas = series.map((s) => `<polyline class="linea-serie" stroke="${colorDe(s.miembro)}"
-    points="${s.serie.map((v, i) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' ')}"/>
-    <circle class="marcador" r="5" cx="${x(n)}" cy="${y(s.serie[n])}" fill="${colorDe(s.miembro)}"/>`).join('');
+  const conPuntos = n <= 14;
+  const lineas = series.map((s) => {
+    const tramos = [];
+    let actual = [];
+    for (let i = 0; i < n; i++) {
+      if (s.serie[i] == null) { if (actual.length) tramos.push(actual); actual = []; } else actual.push(i);
+    }
+    if (actual.length) tramos.push(actual);
+    return tramos.map((t) => (t.length > 1
+      ? `<polyline class="linea-serie" stroke="${colorDe(s.miembro)}" points="${t.map((i) => `${x(i).toFixed(1)},${y(s.serie[i]).toFixed(1)}`).join(' ')}"/>` : '') +
+      t.filter((i) => conPuntos || t.length === 1).map((i) => `<circle class="marcador" r="5" cx="${x(i)}" cy="${y(s.serie[i])}" fill="${colorDe(s.miembro)}"/>`).join('')).join('');
+  }).join('');
 
-  cont.innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="ELO acumulado por jugador durante el campamento">
+  cont.innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="APM de cada jugador por partida">
     ${grilla}${lineas}<g id="capa-mira"></g></svg>`;
 
   const svg = cont.querySelector('svg');
   svg.onmousemove = (e) => {
     const r = svg.getBoundingClientRect();
     const px = ((e.clientX - r.left) / r.width) * W;
-    const i = Math.max(0, Math.min(n, Math.round(((px - m.izq) / (W - m.izq - m.der)) * n)));
-    const orden = [...series].sort((a, b) => b.serie[i] - a.serie[i]);
+    const i = n === 1 ? 0 : Math.max(0, Math.min(n - 1, Math.round(((px - m.izq) / (W - m.izq - m.der)) * (n - 1))));
+    const presentes = series.filter((s) => s.serie[i] != null).sort((a, b) => b.serie[i] - a.serie[i]);
     svg.querySelector('#capa-mira').innerHTML =
       `<line class="mira" x1="${x(i)}" x2="${x(i)}" y1="${m.arriba}" y2="${H - m.abajo}"/>` +
-      orden.map((s) => `<circle class="marcador" r="5" cx="${x(i)}" cy="${y(s.serie[i])}" fill="${colorDe(s.miembro)}"/>`).join('');
-    const titulo = i ? `Partida ${i} · ${esc(partidas[i - 1].mapa)}` : 'Inicio del campamento';
-    mostrarTooltip(`<div class="tooltip-titulo">${titulo}</div>` + orden.map((s) =>
-      `<div class="tooltip-fila"><span><span class="punto" style="background:${colorDe(s.miembro)}"></span>${esc(s.miembro.nick)}</span><b>${signo(s.serie[i])}</b></div>`
-    ).join(''), e.clientX, e.clientY);
+      presentes.map((s) => `<circle class="marcador" r="6" cx="${x(i)}" cy="${y(s.serie[i])}" fill="${colorDe(s.miembro)}"/>`).join('');
+    mostrarTooltip(`<div class="tooltip-titulo">Partida ${i + 1} · ${esc(partidas[i].mapa)}</div>` + (presentes.length ? presentes.map((s) =>
+      `<div class="tooltip-fila"><span><span class="punto" style="background:${colorDe(s.miembro)}"></span>${esc(s.miembro.nick)}</span><b>${s.serie[i]} APM</b></div>`
+    ).join('') : '<div class="tooltip-fila"><span>Sin grabación</span></div>'), e.clientX, e.clientY);
   };
   svg.onmouseleave = () => { svg.querySelector('#capa-mira').innerHTML = ''; ocultarTooltip(); };
 }
@@ -241,12 +255,21 @@ function pintarElo(partidas, st) {
 const ROTULOS = { victoria: '▲ Victoria', derrota: '▼ Derrota', interna: '⚔ Interna' };
 
 function pintarBatallas(partidas) {
-  const jugador = (j, delClan) => `<li>
-      ${imagen(j.civImg, 'civ', j.civ)}
-      <span class="batalla-jugador">${delClan ? `<span class="punto" style="background:${colorDe(j.miembro)}"></span>` : ''}${esc(delClan ? j.miembro.nick : j.nombre)}</span>
-      <span class="batalla-civ">${esc(j.civ)}</span>
-      ${j.diff != null ? `<span class="batalla-elo">${signo(j.diff)}</span>` : ''}
-    </li>`;
+  const fila = (j, delClan) => {
+    const d = j.detalle || {};
+    return `<tr>
+      <td class="batalla-jugador">${imagen(j.civImg, 'civ', '')}${delClan ? `<span class="punto" style="background:${colorDe(j.miembro)}"></span>` : ''}<span>${esc(delClan ? j.miembro.nick : j.nombre)}</span></td>
+      <td class="batalla-civ">${esc(j.civ)}</td>
+      <td class="num">${numero(d.eapm)}</td>
+      <td class="num">${reloj(d.feudal)}</td>
+      <td class="num">${reloj(d.castillos)}</td>
+      <td class="num">${reloj(d.imperial)}</td>
+      <td class="num">${numero(d.aldeanos)}</td>
+      <td class="num">${numero(d.tropas)}</td>
+      <td class="num">${numero(d.edificios)}</td>
+    </tr>`;
+  };
+  const bando = (titulo, filas) => (filas ? `<tr class="bando"><th colspan="9">${titulo}</th></tr>${filas}` : '');
   $('batallas').innerHTML = [...partidas].reverse().map((p, i) => `
     <article class="batalla ${p.resultado}">
       <div class="batalla-mapa">
@@ -254,17 +277,22 @@ function pintarBatallas(partidas) {
         <div>
           <div class="batalla-rotulo ${p.resultado}">${ROTULOS[p.resultado]}</div>
           <div class="batalla-titulo">${esc(p.mapa)}</div>
-          <div class="batalla-meta">Partida ${partidas.length - i} · ${esc(p.modo)}</div>
-          <div class="batalla-meta">${esc(fechaLarga(p.inicio))}, ${hora(p.inicio)} · ${duracion(p.minutos)}</div>
+          <div class="batalla-meta">Partida ${partidas.length - i} · ${esc(p.modo)} · ${esc(fechaLarga(p.inicio))}, ${hora(p.inicio)} · ${duracion(p.minutos)}</div>
         </div>
       </div>
-      <div class="batalla-bandos">
-        <div>
-          <h3>Clan</h3>
-          <ul>${p.clan.map((j) => jugador(j, true)).join('')}${p.aliados.map((j) => jugador(j, false)).join('')}</ul>
-        </div>
-        ${p.rivales.length ? `<div><h3>Rivales</h3><ul>${p.rivales.map((j) => jugador(j, false)).join('')}</ul></div>` : ''}
+      <div class="tabla-scroll">
+        <table class="batalla-tabla">
+          <thead><tr>
+            <th>Jugador</th><th>Civilización</th><th class="num">APM</th><th class="num">Feudal</th><th class="num">Castillos</th>
+            <th class="num">Imperial</th><th class="num">Aldeanos</th><th class="num">Tropas</th><th class="num">Edificios</th>
+          </tr></thead>
+          <tbody>
+            ${bando('Clan', p.clan.map((j) => fila(j, true)).join('') + p.aliados.map((j) => fila(j, false)).join(''))}
+            ${bando('Rivales', p.rivales.map((j) => fila(j, false)).join(''))}
+          </tbody>
+        </table>
       </div>
+      ${p.tieneDetalle ? '' : '<p class="batalla-meta">La grabación de esta partida todavía no está procesada.</p>'}
     </article>`).join('');
 }
 
@@ -296,7 +324,7 @@ async function iniciar() {
   const st = calcular(miembros, partidas);
   const dias = new Set(partidas.map((p) => p.inicio.toDateString())).size;
   $('bajada').textContent = `${plural(partidas.length, 'batalla', 'batallas')} en ${plural(dias, 'jornada', 'jornadas')} · desde el ${partidas[0].inicio.toLocaleDateString('es-AR', { day: 'numeric', month: 'long' })}`;
-  $('nota-cronica').textContent = `Cuentan las partidas con al menos ${campamento.minimoClan} miembros del clan. La más reciente primero.`;
+  $('nota-cronica').textContent = `Cuentan las partidas con al menos ${campamento.minimoClan} miembros del clan. La más reciente primero. Los tiempos de edad son en reloj de juego; aldeanos y tropas son los que se mandaron a crear.`;
 
   pintarMarcador(st);
   pintarGuerreros(st, campamento.clan.tag);
@@ -312,13 +340,13 @@ async function iniciar() {
       <div class="tooltip-fila"><span>Partidas</span><b>${mp.pj}</b></div>
       <div class="tooltip-fila"><span>Victorias</span><b>${mp.g}</b></div>
       <div class="tooltip-fila"><span>Derrotas</span><b>${mp.p}</b></div>`);
-  pintarElo(partidas, st);
+  pintarApm(partidas, st);
   pintarBatallas(partidas);
 
   let pendiente;
   window.addEventListener('resize', () => {
     clearTimeout(pendiente);
-    pendiente = setTimeout(() => pintarElo(partidas, st), 150);
+    pendiente = setTimeout(() => pintarApm(partidas, st), 150);
   });
 }
 

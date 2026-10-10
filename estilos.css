@@ -180,14 +180,13 @@ h2 {
 }
 .guerrero-tag { font-size: 11px; letter-spacing: 0.06em; color: var(--tinta-3); }
 .guerrero-nombre { font-family: var(--titulos); font-weight: 700; font-size: 15px; overflow-wrap: anywhere; }
-.guerrero-elo { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 4px 8px; }
-.elo-delta { font-size: 26px; font-weight: 600; line-height: 1; }
-.elo-delta span { font-size: 15px; }
-.elo-actual { font-size: 13px; color: var(--tinta-2); }
+.guerrero-apm { display: flex; align-items: baseline; gap: 8px; }
+.apm-valor { font-size: 30px; font-weight: 600; line-height: 1; }
+.apm-rotulo { font-size: 13px; color: var(--tinta-2); }
 .medidor-fila { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--tinta-2); white-space: nowrap; }
 .medidor { flex: 1; height: 8px; border-radius: 4px; background: var(--pista); overflow: hidden; }
 .medidor-relleno { height: 100%; border-radius: 4px; background: var(--acento); }
-.guerrero-datos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin: 0; text-align: center; }
+.guerrero-datos { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px 4px; margin: 0; text-align: center; }
 .guerrero-datos dt { font-size: 10px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--tinta-3); }
 .guerrero-datos dd { margin: 0; font-size: 16px; font-weight: 600; }
 .guerrero-pie {
@@ -252,8 +251,8 @@ circle.marcador { stroke: var(--panel); stroke-width: 2; }
 .batallas { display: grid; gap: 12px; }
 .batalla {
   display: grid;
-  grid-template-columns: minmax(220px, 300px) 1fr;
-  gap: 16px;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
   padding: 14px;
   border: 1px solid var(--grilla);
   border-left: 4px solid var(--eje);
@@ -264,19 +263,22 @@ circle.marcador { stroke: var(--panel); stroke-width: 2; }
 .batalla.victoria { border-left-color: var(--bien); }
 .batalla.derrota { border-left-color: var(--mal); }
 .batalla-mapa { display: flex; align-items: center; gap: 12px; min-width: 0; }
-.mapa { flex: none; width: 72px; height: 72px; object-fit: contain; }
+.mapa { flex: none; width: 64px; height: 64px; object-fit: contain; }
 .batalla-rotulo { font-family: var(--titulos); font-weight: 700; font-size: 13px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--tinta-2); }
 .batalla-rotulo.victoria { color: var(--bien); }
 .batalla-rotulo.derrota { color: var(--mal); }
 .batalla-titulo { font-family: var(--titulos); font-weight: 700; font-size: 18px; }
-.batalla-meta { font-size: 13px; color: var(--tinta-2); }
-.batalla-bandos { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px 20px; min-width: 0; }
-.batalla h3 { margin: 0 0 6px; font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--tinta-3); }
-.batalla ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 5px; }
-.batalla li { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto 34px; align-items: center; gap: 8px; font-size: 14px; }
-.batalla-jugador { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.batalla-civ { font-size: 13px; color: var(--tinta-2); }
-.batalla-elo { text-align: right; font-size: 13px; color: var(--tinta-2); font-variant-numeric: tabular-nums; }
+.batalla-meta { margin: 0; font-size: 13px; color: var(--tinta-2); }
+.tabla-scroll { overflow-x: auto; }
+.batalla-tabla { width: 100%; border-collapse: collapse; font-size: 14px; }
+.batalla-tabla th, .batalla-tabla td { padding: 5px 8px; text-align: left; white-space: nowrap; }
+.batalla-tabla thead th { font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--tinta-3); border-bottom: 1px solid var(--grilla); }
+.batalla-tabla .num { text-align: right; font-variant-numeric: tabular-nums; }
+.batalla-tabla .bando th { padding-top: 10px; font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--oro); }
+.batalla-tabla tbody tr:not(.bando):hover { background: rgba(255, 255, 255, 0.05); }
+.batalla-jugador { display: flex; align-items: center; gap: 8px; }
+.batalla-jugador .punto { margin-right: 0; }
+.batalla-civ { color: var(--tinta-2); }
 
 /* Listas de comidas y actividades */
 .lista { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
@@ -353,5 +355,4 @@ input:focus-visible, select:focus-visible, button:focus-visible { outline: 2px s
 
 @media (max-width: 640px) {
   .panel, .marcador { padding: 16px; }
-  .batalla { grid-template-columns: minmax(0, 1fr); }
 }

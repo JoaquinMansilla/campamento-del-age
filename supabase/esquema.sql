@@ -83,3 +83,25 @@ end $$;
 
 revoke all on function public.guardar_partidas(text, jsonb) from public;
 grant execute on function public.guardar_partidas(text, jsonb) to anon, authenticated;
+
+-- Estadísticas por jugador sacadas de la grabación de la partida (scripts/grabaciones.py).
+alter table partidas add column if not exists detalle jsonb;
+
+create or replace function public.guardar_detalle(p_token text, p_id bigint, p_detalle jsonb)
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if not exists (
+    select 1 from privado.claves
+    where nombre = 'sincronizador' and hash = encode(sha256(convert_to(p_token, 'UTF8')), 'hex')
+  ) then
+    raise exception 'token invalido' using errcode = '28000';
+  end if;
+  update public.partidas set detalle = p_detalle, actualizado = now() where id = p_id;
+end $$;
+
+revoke all on function public.guardar_detalle(text, bigint, jsonb) from public;
+grant execute on function public.guardar_detalle(text, bigint, jsonb) to anon, authenticated;
