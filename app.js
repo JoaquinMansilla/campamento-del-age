@@ -278,7 +278,6 @@ function pintarBatallas(partidas) {
   };
   const cronica = (p) => (p.cronica ? `<div class="cronica">
       <h3>${esc(p.cronica.titulo)}</h3>
-      ${'speechSynthesis' in window ? `<button class="boton secundario chico narrar" data-partida="${p.id}">▶ Escuchar la crónica</button>` : ''}
       <p>${esc(p.cronica.relato)}</p>
       ${p.cronica.definicion ? `<h4>Lo que definió la partida</h4><p>${esc(p.cronica.definicion)}</p>` : ''}
       ${p.cronica.destacados?.length ? `<ul>${p.cronica.destacados.map((d) => `<li>${esc(d)}</li>`).join('')}</ul>` : ''}
@@ -330,38 +329,6 @@ function pintarBatallas(partidas) {
     </article>`).join('');
 }
 
-// Narración con la voz del navegador: grave y pausada, lo más parecido a un narrador de campaña
-// que se puede lograr sin grabar audio.
-function textoNarrado(c) {
-  return [c.titulo, c.relato, c.definicion, ...(c.perlitas || []).map((x) => `${x.jugador}. ${x.texto}`)].filter(Boolean).join('. ');
-}
-
-function prepararNarracion(partidas) {
-  if (!('speechSynthesis' in window)) return;
-  const porId = new Map(partidas.map((p) => [String(p.id), p]));
-  const restaurar = () => { for (const b of document.querySelectorAll('.narrar')) b.textContent = '▶ Escuchar la crónica'; };
-  $('batallas').addEventListener('click', (e) => {
-    const boton = e.target.closest('.narrar');
-    if (!boton) return;
-    const sonaba = boton.textContent.startsWith('■');
-    speechSynthesis.cancel();
-    restaurar();
-    if (sonaba) return;
-    const voces = speechSynthesis.getVoices().filter((v) => v.lang.startsWith('es'));
-    const voz = voces.find((v) => /es-(AR|419|MX|US)/.test(v.lang)) || voces[0];
-    const frase = new SpeechSynthesisUtterance(textoNarrado(porId.get(boton.dataset.partida).cronica));
-    frase.lang = voz ? voz.lang : 'es-AR';
-    if (voz) frase.voice = voz;
-    frase.pitch = 0.6;
-    frase.rate = 0.9;
-    frase.onend = frase.onerror = restaurar;
-    boton.textContent = '■ Detener';
-    speechSynthesis.speak(frase);
-  });
-  speechSynthesis.getVoices();
-  window.addEventListener('pagehide', () => speechSynthesis.cancel());
-}
-
 async function iniciar() {
   let datos;
   try {
@@ -408,7 +375,6 @@ async function iniciar() {
       <div class="tooltip-fila"><span>Derrotas</span><b>${mp.p}</b></div>`);
   pintarApm(partidas, st);
   pintarBatallas(partidas);
-  prepararNarracion(partidas);
 
   let pendiente;
   window.addEventListener('resize', () => {
