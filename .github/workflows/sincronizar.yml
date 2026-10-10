@@ -1,8 +1,8 @@
 name: Sincronizar partidas
 
+# Respaldo manual: la sincronización habitual corre en una PC con scripts/rutina.sh,
+# que además escribe las crónicas. Este workflow no las escribe.
 on:
-  schedule:
-    - cron: "*/10 * * * *"
   workflow_dispatch:
 
 permissions:
@@ -28,7 +28,7 @@ jobs:
           python-version: "3.12"
       - name: Estadísticas de las grabaciones
         run: |
-          pip install --quiet mgz==1.8.51
+          pip install --quiet -r requirements.txt
           python scripts/grabaciones.py
         env:
           SYNC_TOKEN: ${{ secrets.SYNC_TOKEN }}

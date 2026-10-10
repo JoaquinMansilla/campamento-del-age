@@ -269,6 +269,26 @@ function pintarBatallas(partidas) {
       <td class="num">${numero(d.edificios)}</td>
     </tr>`;
   };
+  const cronica = (p) => (p.cronica ? `<div class="cronica">
+      <h3>${esc(p.cronica.titulo)}</h3>
+      <p>${esc(p.cronica.relato)}</p>
+      ${p.cronica.destacados?.length ? `<ul>${p.cronica.destacados.map((d) => `<li>${esc(d)}</li>`).join('')}</ul>` : ''}
+      ${p.cronica.frase?.texto ? `<blockquote>«${esc(p.cronica.frase.texto)}» <cite>${esc(p.cronica.frase.jugador)}</cite></blockquote>` : ''}
+    </div>` : '');
+  const chat = (p) => {
+    if (!p.chat.length) return '';
+    const quien = new Map(p.jugadores.map((j) => [j.id, j]));
+    const delClan = new Map(p.clan.map((j) => [j.id, j.miembro]));
+    return `<details class="chat">
+      <summary>Chat de la partida (${plural(p.chat.length, 'mensaje', 'mensajes')})</summary>
+      <ol>${p.chat.map((m) => {
+        const miembro = delClan.get(m.jugador);
+        return `<li><span class="chat-hora">${reloj(m.t)}</span>
+          <span class="chat-quien">${miembro ? `<span class="punto" style="background:${colorDe(miembro)}"></span>` : ''}${esc(miembro ? miembro.nick : quien.get(m.jugador)?.nombre || '?')}${m.canal === 'equipo' ? ' <span class="chat-canal">equipo</span>' : ''}</span>
+          <span class="chat-texto">${esc(m.texto)}</span></li>`;
+      }).join('')}</ol>
+    </details>`;
+  };
   const bando = (titulo, filas) => (filas ? `<tr class="bando"><th colspan="9">${titulo}</th></tr>${filas}` : '');
   $('batallas').innerHTML = [...partidas].reverse().map((p, i) => `
     <article class="batalla ${p.resultado}">
@@ -280,6 +300,7 @@ function pintarBatallas(partidas) {
           <div class="batalla-meta">Partida ${partidas.length - i} · ${esc(p.modo)} · ${esc(fechaLarga(p.inicio))}, ${hora(p.inicio)} · ${duracion(p.minutos)}</div>
         </div>
       </div>
+      ${cronica(p)}
       <div class="tabla-scroll">
         <table class="batalla-tabla">
           <thead><tr>
@@ -292,6 +313,7 @@ function pintarBatallas(partidas) {
           </tbody>
         </table>
       </div>
+      ${chat(p)}
       ${p.tieneDetalle ? '' : '<p class="batalla-meta">La grabación de esta partida todavía no está procesada.</p>'}
     </article>`).join('');
 }

@@ -1,13 +1,14 @@
-"""Saca estadísticas por jugador de la grabación de cada partida y las guarda en Supabase.
+"""Saca estadísticas, chat y eventos de la grabación de cada partida y los guarda en Supabase.
 
-World's Edge no publica APM ni tiempos de edad: salen de la grabación (.aoe2record), que se baja
-de aoe.ms. De la grabación solo se lee la secuencia de acciones, que es estable entre parches;
+World's Edge no publica APM, tiempos de edad ni chat: salen de la grabación (.aoe2record), que se
+baja de aoe.ms. De la grabación solo se lee la secuencia de acciones, que es estable entre parches;
 la cabecera cambia con cada versión del juego y no se interpreta, salvo para ubicar a los jugadores.
 
-  SYNC_TOKEN=... python scripts/grabaciones.py   procesa las partidas que todavía no tienen detalle
+  SYNC_TOKEN=... python scripts/grabaciones.py   procesa las partidas recientes que no tienen detalle
   python scripts/grabaciones.py                  sin token solo muestra lo que calculó
 """
 import collections
+import datetime
 import io
 import json
 import os
@@ -15,6 +16,7 @@ import pathlib
 import re
 import struct
 import urllib.error
+import urllib.parse
 import urllib.request
 import zipfile
 import zlib
@@ -24,11 +26,17 @@ from mgz.fast import Operation
 
 RAIZ = pathlib.Path(__file__).resolve().parent.parent
 CABECERAS = {'User-Agent': 'campamento-del-age (https://github.com/JoaquinMansilla/campamento-del-age)'}
-# Tecnología de cada edad y segundos que tarda en investigarse
+# Si cambia lo que se extrae, subir la versión hace que se reprocesen las partidas recientes
+VERSION = 2
+DIAS_DE_REINTENTO = 4
+# Tecnología de cada edad y segundos que tarda en investigarse (respaldo si falta el aviso del juego)
 EDADES = {101: ('feudal', 130), 102: ('castillos', 160), 103: ('imperial', 190)}
+AVISO_DE_EDAD = re.compile(r'^<player_id,(\d+),\d+> advanced to the (Feudal|Castle|Imperial) Age')
+EDAD_POR_AVISO = {'Feudal': 'feudal', 'Castle': 'castillos', 'Imperial': 'imperial'}
 ALDEANOS = {83, 293}
 # Unidades que no cuentan como tropas: pesqueros, mercantes, carretas y transportes
 CIVILES = {13, 17, 128, 545}
+EDIFICIOS = {82: 'fortalezas', 109: 'centrosUrbanos', 621: 'centrosUrbanos', 276: 'maravillas'}
 
 
 def pedir(url, cuerpo=None, cabeceras=None):
@@ -38,16 +46,20 @@ def pedir(url, cuerpo=None, cabeceras=None):
         return res.read()
 
 
-def bajar_grabacion(partida_id, perfiles):
-    """La grabación se pide a nombre de un jugador; no todos la tienen disponible."""
+def bajar_grabaciones(partida_id, perfiles):
+    """Cada jugador tiene su propia grabación y no todas están disponibles.
+
+    Las estadísticas son iguales en todas, pero el chat de equipo solo figura en las del equipo.
+    """
+    grabaciones = []
     for perfil in perfiles:
         try:
             crudo = pedir(f'https://aoe.ms/replay/?gameId={partida_id}&profileId={perfil}')
             with zipfile.ZipFile(io.BytesIO(crudo)) as z:
-                return z.read(z.namelist()[0])
+                grabaciones.append(z.read(z.namelist()[0]))
         except (urllib.error.URLError, zipfile.BadZipFile, TimeoutError):
             continue
-    return None
+    return grabaciones
 
 
 def numeros_de_jugador(cabecera, perfiles):
@@ -63,7 +75,8 @@ def numeros_de_jugador(cabecera, perfiles):
     return numeros
 
 
-def analizar(grabacion, perfiles):
+def leer(grabacion, perfiles):
+    """Devuelve (segundos de juego, estadísticas por perfil, mensajes de chat)."""
     largo = struct.unpack_from('<I', grabacion)[0]
     numeros = numeros_de_jugador(zlib.decompress(grabacion[8:largo], wbits=-15), perfiles)
     flujo = io.BytesIO(grabacion)
@@ -71,13 +84,32 @@ def analizar(grabacion, perfiles):
     fast.meta(flujo)
 
     ms = 0
-    stats = collections.defaultdict(lambda: collections.Counter())
-    edades = collections.defaultdict(dict)
+    stats = collections.defaultdict(collections.Counter)
+    por_clic = collections.defaultdict(dict)
+    extras = collections.defaultdict(dict)
+    chat = []
     try:
         while flujo.tell() < len(grabacion):
             operacion, carga = fast.operation(flujo)
             if operacion == Operation.SYNC:
                 ms += carga[0]
+            elif operacion == Operation.CHAT:
+                try:
+                    mensaje = json.loads(carga.decode('utf-8', 'replace'))
+                except ValueError:
+                    continue
+                texto = str(mensaje.get('message', '')).strip()
+                aviso = AVISO_DE_EDAD.match(texto)
+                if aviso:
+                    # El juego avisa por chat el momento exacto en que cada jugador sube de edad
+                    extras[int(aviso.group(1))].setdefault(EDAD_POR_AVISO[aviso.group(2)], round(ms / 1000))
+                elif texto and not texto.startswith('<') and mensaje.get('player') in numeros:
+                    chat.append({
+                        't': round(ms / 1000),
+                        'jugador': numeros[mensaje['player']],
+                        'canal': 'todos' if mensaje.get('channel') == 0 else 'equipo',
+                        'texto': texto[:200],
+                    })
             elif operacion == Operation.ACTION:
                 accion, d = carga
                 jugador = d.get('player_id')
@@ -93,11 +125,17 @@ def analizar(grabacion, perfiles):
                         s['tropas'] += d.get('amount', 1)
                 elif accion.name == 'BUILD':
                     s['edificios'] += 1
+                    if d.get('building_id') in EDIFICIOS:
+                        s[EDIFICIOS[d['building_id']]] += 1
+                elif accion.name in ('BUY', 'SELL'):
+                    s['comercio'] += 1
+                elif accion.name == 'RESIGN':
+                    extras[jugador].setdefault('rendicion', round(ms / 1000))
                 elif accion.name == 'RESEARCH':
                     edad = EDADES.get(d.get('technology_id'))
                     if edad:
                         # Si canceló y volvió a pedirla, vale el último clic
-                        edades[jugador][edad[0]] = round(ms / 1000) + edad[1]
+                        por_clic[jugador][edad[0]] = round(ms / 1000) + edad[1]
                     else:
                         s['tecnologias'] += 1
     except Exception as err:  # una grabación cortada igual sirve hasta donde se pudo leer
@@ -111,13 +149,27 @@ def analizar(grabacion, perfiles):
         s = stats[numero]
         jugadores[str(perfil)] = {
             'eapm': round(s['acciones'] / minutos),
-            'aldeanos': s['aldeanos'],
-            'tropas': s['tropas'],
-            'edificios': s['edificios'],
-            'tecnologias': s['tecnologias'],
-            **edades[numero],
+            **{campo: s[campo] for campo in ('aldeanos', 'tropas', 'edificios', 'tecnologias', 'fortalezas', 'centrosUrbanos', 'maravillas', 'comercio')},
+            **por_clic[numero],
+            **extras[numero],
         }
-    return {'segundosDeJuego': round(ms / 1000), 'jugadores': jugadores} if jugadores else None
+    return round(ms / 1000), jugadores, chat
+
+
+def analizar(grabaciones, perfiles):
+    lecturas = [l for l in (leer(g, perfiles) for g in grabaciones) if l and l[1]]
+    if not lecturas:
+        return None
+    # La grabación más larga es la del que se quedó hasta el final
+    segundos, jugadores, _ = max(lecturas, key=lambda l: l[0])
+    vistos = {}
+    for _, _, chat in lecturas:
+        for m in chat:
+            vistos.setdefault((m['t'], m['jugador'], m['texto']), m)
+    chat = sorted(vistos.values(), key=lambda m: m['t'])
+    for m in chat:
+        jugadores[str(m['jugador'])]['mensajes'] = jugadores[str(m['jugador'])].get('mensajes', 0) + 1
+    return {'version': VERSION, 'segundosDeJuego': segundos, 'grabaciones': len(lecturas), 'jugadores': jugadores, 'chat': chat}
 
 
 def main():
@@ -125,25 +177,30 @@ def main():
     url = re.search(r"supabaseUrl:\s*'([^']+)'", config).group(1)
     anon = re.search(r"supabaseAnonKey:\s*'([^']+)'", config).group(1)
     supabase = {'apikey': anon, 'Authorization': f'Bearer {anon}', 'Content-Type': 'application/json'}
-    clan = {m['id'] for m in json.loads((RAIZ / 'campamento.json').read_text())['clan']['miembros']}
     token = os.environ.get('SYNC_TOKEN')
 
-    pendientes = json.loads(pedir(f'{url}/rest/v1/partidas?select=id,datos&detalle=is.null&order=inicio.desc&limit=20', cabeceras=supabase))
+    desde = (datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=DIAS_DE_REINTENTO)).strftime('%Y-%m-%dT%H:%M:%SZ')
+    filtro = urllib.parse.urlencode({
+        'select': 'id,datos',
+        'inicio': f'gte.{desde}',
+        'or': f'(detalle.is.null,detalle->>version.is.null,detalle->>version.neq.{VERSION})',
+        'order': 'inicio.desc',
+        'limit': '20',
+    })
+    pendientes = json.loads(pedir(f'{url}/rest/v1/partidas?{filtro}', cabeceras=supabase))
     for fila in pendientes:
         perfiles = [j['id'] for j in fila['datos']['jugadores']]
-        # Primero se prueba con los miembros del clan
-        grabacion = bajar_grabacion(fila['id'], sorted(perfiles, key=lambda p: p not in clan))
-        if not grabacion:
-            print(f"{fila['id']}: sin grabación disponible")
-            continue
-        detalle = analizar(grabacion, perfiles)
+        grabaciones = bajar_grabaciones(fila['id'], perfiles)
+        detalle = analizar(grabaciones, perfiles) if grabaciones else None
         if not detalle:
-            print(f"{fila['id']}: no se pudo interpretar la grabación")
+            print(f"{fila['id']}: sin grabación utilizable ({len(grabaciones)} bajadas)")
             continue
-        print(f"{fila['id']}: {json.dumps(detalle)}" if not token else f"{fila['id']}: {len(detalle['jugadores'])} jugadores")
+        print(f"{fila['id']}: {detalle['grabaciones']} grabaciones, {len(detalle['jugadores'])} jugadores, {len(detalle['chat'])} mensajes")
         if token:
             pedir(f'{url}/rest/v1/rpc/guardar_detalle', {'p_token': token, 'p_id': fila['id'], 'p_detalle': detalle}, supabase)
-    print(f'{len(pendientes)} partidas sin detalle revisadas.')
+        else:
+            print(json.dumps(detalle, ensure_ascii=False)[:1500])
+    print(f'{len(pendientes)} partidas pendientes de detalle revisadas.')
 
 
 main()

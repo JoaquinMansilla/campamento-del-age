@@ -1,1 +1,4 @@
 supabase/.temp/
+.venv/
+logs/
+__pycache__/

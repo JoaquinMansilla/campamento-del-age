@@ -105,3 +105,25 @@ end $$;
 
 revoke all on function public.guardar_detalle(text, bigint, jsonb) from public;
 grant execute on function public.guardar_detalle(text, bigint, jsonb) to anon, authenticated;
+
+-- Crónica de cada partida, escrita por Claude a partir del detalle (scripts/cronicas.py).
+alter table partidas add column if not exists cronica jsonb;
+
+create or replace function public.guardar_cronica(p_token text, p_id bigint, p_cronica jsonb)
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if not exists (
+    select 1 from privado.claves
+    where nombre = 'sincronizador' and hash = encode(sha256(convert_to(p_token, 'UTF8')), 'hex')
+  ) then
+    raise exception 'token invalido' using errcode = '28000';
+  end if;
+  update public.partidas set cronica = p_cronica, actualizado = now() where id = p_id;
+end $$;
+
+revoke all on function public.guardar_cronica(text, bigint, jsonb) from public;
+grant execute on function public.guardar_cronica(text, bigint, jsonb) to anon, authenticated;

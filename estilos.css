@@ -280,6 +280,21 @@ circle.marcador { stroke: var(--panel); stroke-width: 2; }
 .batalla-jugador .punto { margin-right: 0; }
 .batalla-civ { color: var(--tinta-2); }
 
+.cronica { padding: 12px 14px; border-left: 2px solid var(--oro-oscuro); background: rgba(224, 185, 95, 0.06); border-radius: 0 6px 6px 0; }
+.cronica h3 { margin: 0 0 6px; font-family: var(--titulos); font-weight: 700; font-size: 16px; color: var(--oro); }
+.cronica p { margin: 0; max-width: 78ch; color: var(--pergamino); }
+.cronica ul { margin: 10px 0 0; padding-left: 18px; display: grid; gap: 4px; max-width: 78ch; font-size: 14px; color: var(--tinta-2); }
+.cronica blockquote { margin: 10px 0 0; font-style: italic; color: var(--pergamino); }
+.cronica cite { font-style: normal; font-size: 13px; color: var(--tinta-3); }
+.cronica cite::before { content: "— "; }
+.chat summary { cursor: pointer; font-size: 13px; color: var(--oro); }
+.chat ol { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 4px; max-height: 320px; overflow-y: auto; font-size: 14px; }
+.chat li { display: grid; grid-template-columns: 44px minmax(90px, 160px) minmax(0, 1fr); gap: 10px; align-items: baseline; }
+.chat-hora { color: var(--tinta-3); font-size: 12px; font-variant-numeric: tabular-nums; text-align: right; }
+.chat-quien { color: var(--tinta-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chat-canal { font-size: 10px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--tinta-3); }
+.chat-texto { overflow-wrap: anywhere; }
+
 /* Listas de comidas y actividades */
 .lista { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
 .lista-dia {
