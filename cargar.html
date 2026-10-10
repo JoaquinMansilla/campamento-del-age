@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cargar datos · Campamento del Age</title>
+  <meta name="robots" content="noindex">
+  <link rel="stylesheet" href="estilos.css">
+</head>
+<body>
+  <main class="pagina">
+    <header class="encabezado">
+      <p class="sobretitulo"><a href="./">← Volver al dashboard</a></p>
+      <h1>Cargar datos</h1>
+      <p class="bajada">Partidas, comidas y actividades del Campamento del Age.</p>
+    </header>
+
+    <p class="aviso" id="sin-base" hidden>
+      Todavía no hay una base de datos conectada. Completá <code>config.js</code> con la URL y la anon key de Supabase.
+    </p>
+
+    <section class="tarjeta" id="seccion-login" hidden>
+      <h2>Ingresar</h2>
+      <p class="nota">Solo los usuarios creados en Supabase pueden cargar datos.</p>
+      <form class="formulario" id="form-login">
+        <div class="campos">
+          <label>Email <input type="email" name="email" required autocomplete="username"></label>
+          <label>Contraseña <input type="password" name="clave" required autocomplete="current-password"></label>
+        </div>
+        <button class="primario">Ingresar</button>
+        <p class="mensaje" id="msj-login"></p>
+      </form>
+    </section>
+
+    <div id="seccion-carga" hidden style="display:contents">
+      <section class="tarjeta barra-sesion">
+        <span id="sesion"></span>
+        <button class="chico" id="salir">Cerrar sesión</button>
+      </section>
+
+      <section class="tarjeta">
+        <h2>Nueva partida</h2>
+        <p class="nota">En un todos contra todos, poné un número de equipo distinto a cada jugador.</p>
+        <form class="formulario" id="form-partida">
+          <div class="campos">
+            <label>Fecha <input type="date" name="fecha" required></label>
+            <label>Mapa <input name="mapa" list="lista-mapas" required></label>
+            <label>Duración (min) <input type="number" name="duracion" min="1"></label>
+            <label>Equipo ganador <input type="number" name="ganador" min="1" value="1" required></label>
+          </div>
+          <div class="formulario" id="jugadores"></div>
+          <button type="button" class="chico" id="sumar-jugador" style="justify-self:start">+ Agregar jugador</button>
+          <button class="primario">Guardar partida</button>
+          <p class="mensaje" id="msj-partida"></p>
+        </form>
+      </section>
+
+      <div class="dos-columnas">
+        <section class="tarjeta">
+          <h2>Nueva comida</h2>
+          <p class="nota">Cocineros separados por coma.</p>
+          <form class="formulario" id="form-comida">
+            <div class="campos">
+              <label>Fecha <input type="date" name="fecha" required></label>
+              <label>Momento
+                <select name="momento">
+                  <option value="desayuno">Desayuno</option>
+                  <option value="almuerzo">Almuerzo</option>
+                  <option value="merienda">Merienda</option>
+                  <option value="cena" selected>Cena</option>
+                </select>
+              </label>
+            </div>
+            <label>Plato <input name="plato" required></label>
+            <label>Cocinó <input name="cocineros" placeholder="Fede, Joaco"></label>
+            <button class="primario">Guardar comida</button>
+            <p class="mensaje" id="msj-comida"></p>
+          </form>
+        </section>
+
+        <section class="tarjeta">
+          <h2>Nueva actividad</h2>
+          <p class="nota">Participantes separados por coma.</p>
+          <form class="formulario" id="form-actividad">
+            <div class="campos">
+              <label>Fecha <input type="date" name="fecha" required></label>
+              <label>Actividad <input name="nombre" required></label>
+            </div>
+            <label>Detalle <input name="descripcion"></label>
+            <label>Participantes <input name="participantes" placeholder="Joaco, Nacho, Santi"></label>
+            <button class="primario">Guardar actividad</button>
+            <p class="mensaje" id="msj-actividad"></p>
+          </form>
+        </section>
+      </div>
+
+      <section class="tarjeta">
+        <h2>Últimas cargas</h2>
+        <p class="nota">Si algo quedó mal, borralo y volvé a cargarlo.</p>
+        <div class="tabla-scroll">
+          <table id="tabla-cargas"></table>
+        </div>
+      </section>
+    </div>
+
+    <datalist id="lista-jugadores"></datalist>
+    <datalist id="lista-civs"></datalist>
+    <datalist id="lista-mapas"></datalist>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+  <script src="config.js"></script>
+  <script src="datos.js"></script>
+  <script src="cargar.js"></script>
+</body>
+</html>

@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Campamento del Age</title>
+  <meta name="description" content="Estadísticas de las partidas de Age of Empires del Campamento del Age.">
+  <link rel="stylesheet" href="estilos.css">
+</head>
+<body>
+  <main class="pagina">
+    <header class="encabezado">
+      <p class="sobretitulo">Age of Empires</p>
+      <h1 id="titulo">Campamento del Age</h1>
+      <p class="bajada" id="bajada">Cargando partidas…</p>
+    </header>
+
+    <p class="aviso" id="aviso-ejemplo" hidden>
+      Estos son <strong>datos de ejemplo</strong>: todavía no hay una base de datos conectada.
+      Completá <code>config.js</code> con los datos de Supabase para ver los reales.
+    </p>
+    <p class="aviso error" id="aviso-error" hidden></p>
+
+    <section class="fichas" id="fichas" aria-label="Resumen" data-partidas></section>
+
+    <section class="tarjeta" data-partidas>
+      <h2>Tabla de posiciones</h2>
+      <p class="nota">Ordenada por porcentaje de victorias; a igualdad, por partidas ganadas.</p>
+      <div class="tabla-scroll">
+        <table id="tabla-posiciones"></table>
+      </div>
+    </section>
+
+    <section class="tarjeta" data-partidas>
+      <h2>Victorias acumuladas</h2>
+      <p class="nota">Cuántas partidas llevaba ganadas cada jugador después de cada partida.</p>
+      <div class="leyenda" id="leyenda-evolucion"></div>
+      <div class="grafico-linea" id="grafico-evolucion"></div>
+    </section>
+
+    <div class="dos-columnas" data-partidas>
+      <section class="tarjeta">
+        <h2>Civilizaciones más elegidas</h2>
+        <p class="nota">Veces elegida y porcentaje de victorias con esa civilización.</p>
+        <div class="barras" id="barras-civs"></div>
+      </section>
+      <section class="tarjeta">
+        <h2>Mapas más jugados</h2>
+        <p class="nota">Partidas jugadas y duración promedio en cada mapa.</p>
+        <div class="barras" id="barras-mapas"></div>
+      </section>
+    </div>
+
+    <section class="tarjeta" data-partidas>
+      <h2>Historial de partidas</h2>
+      <div class="tabla-scroll">
+        <table id="tabla-historial"></table>
+      </div>
+    </section>
+
+    <div class="dos-columnas">
+      <section class="tarjeta">
+        <h2>Comidas</h2>
+        <p class="nota">Qué se comió y quién cocinó.</p>
+        <div class="tabla-scroll">
+          <table id="tabla-comidas"></table>
+        </div>
+      </section>
+      <section class="tarjeta">
+        <h2>Quién cocinó más</h2>
+        <p class="nota">Cantidad de comidas en las que cocinó cada uno.</p>
+        <div class="barras" id="barras-cocineros"></div>
+      </section>
+    </div>
+
+    <section class="tarjeta">
+      <h2>Actividades</h2>
+      <p class="nota">Todo lo que se hizo además de jugar al Age.</p>
+      <div class="tabla-scroll">
+        <table id="tabla-actividades"></table>
+      </div>
+    </section>
+
+    <footer class="pie">Hecho para el Campamento del Age · Wololo · <a href="cargar.html">Cargar datos</a></footer>
+  </main>
+
+  <div class="tooltip" id="tooltip" hidden></div>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+  <script src="config.js"></script>
+  <script src="datos.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
