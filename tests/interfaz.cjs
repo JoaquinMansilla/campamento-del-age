@@ -47,6 +47,38 @@ const detalle = { segundosDeJuego: 1800, jugadores: Object.fromEntries(jugadores
     assert.match(await page.locator('#bajada').textContent(), /Todavía no/);
     assert.equal(await page.locator('.funcion-partida').count(), 0);
     assert.deepEqual(errores, []);
+    const anuncio = await browser.newPage({ viewport: { width: 390, height: 844 } });
+    await anuncio.clock.install();
+    await anuncio.goto(BASE, { waitUntil: 'networkidle' });
+    await anuncio.locator('#cartel-sancor img').evaluate(img => img.decode());
+    const cartel = anuncio.locator('#cartel-sancor');
+    assert.equal(await cartel.isVisible(), false);
+    await anuncio.clock.fastForward(89999);
+    assert.equal(await cartel.isVisible(), false, 'No aparece antes de 90 segundos');
+    await anuncio.clock.fastForward(60001);
+    assert.equal(await cartel.isVisible(), true, 'Aparece como máximo a los 150 segundos');
+    await anuncio.locator('#cerrar-sancor').click();
+    assert.equal(await cartel.isVisible(), false, 'Cierre inmediato');
+    await anuncio.clock.fastForward(89999);
+    assert.equal(await cartel.isVisible(), false, 'No reaparece antes de 90 segundos desde el cierre');
+    await anuncio.clock.fastForward(60001);
+    assert.equal(await cartel.isVisible(), true);
+    await anuncio.keyboard.press('Escape');
+    assert.equal(await cartel.isVisible(), false, 'Escape cierra el cartel');
+    await anuncio.evaluate(() => {
+      window.pestanaOculta = true;
+      Object.defineProperty(document, 'hidden', { configurable: true, get: () => window.pestanaOculta });
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    await anuncio.clock.fastForward(300000);
+    assert.equal(await cartel.isVisible(), false, 'No muestra publicidad en segundo plano');
+    await anuncio.evaluate(() => { window.pestanaOculta = false; document.dispatchEvent(new Event('visibilitychange')); });
+    await anuncio.clock.fastForward(150000);
+    assert.equal(await cartel.isVisible(), true);
+    const caja = await cartel.boundingBox();
+    assert.ok(caja.x >= 0 && caja.x + caja.width <= 390, 'El cartel cabe en móvil');
+    await anuncio.close();
+    console.log('Publicidad verificada: intervalo aleatorio, cierre inmediato, Escape, segundo plano y móvil.');
     console.log('Interfaz verificada: tres tarjetas, sorteo, móvil, Oráculo, datos vacíos, APM cero y escape de contenido.');
   } finally { await browser.close(); }
 })().catch(err => { console.error(err); process.exitCode = 1; });

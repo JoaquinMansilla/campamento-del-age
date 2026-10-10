@@ -111,3 +111,12 @@ Iniciar antes el servidor local en el puerto 8765; `TEST_URL` permite cambiarlo.
 `PLAYWRIGHT_MODULE` permite usar una instalación de Playwright existente, y
 `PLAYWRIGHT_CHANNEL=msedge` utiliza Edge. Los escenarios de navegador usan datos de
 prueba interceptados, nunca escriben en Supabase.
+
+### Cartel de Sancor Seguros
+
+La imagen local de `assets/sancor-seguros.png` aparece en un aviso flotante, en un
+momento aleatorio entre 90 y 150 segundos después de abrir la página o cerrar el
+cartel anterior. Se cierra al instante con el botón «Cerrar ×» o Escape, sin bloquear
+la página ni mover el foco. Al pasar a otra pestaña se oculta y se cancela el reloj;
+al regresar comienza un intervalo nuevo. No se apilan anuncios ni se agregan enlaces
+externos o rastreadores.

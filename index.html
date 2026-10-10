@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="estilos.css?v=7">
+  <link rel="stylesheet" href="estilos.css?v=8">
 </head>
 <body>
   <main class="pagina">
@@ -141,6 +141,15 @@
     <option value="Fútbol"><option value="Truco"><option value="Fogón"><option value="Pileta">
     <option value="Caminata"><option value="Juegos de mesa"><option value="Película">
   </datalist>
+
+  <aside class="cartel-sancor" id="cartel-sancor" aria-label="Publicidad de Sancor Seguros" hidden>
+    <div class="cartel-sancor-cabecera">
+      <span>Publicidad · Sancor Seguros</span>
+      <button type="button" id="cerrar-sancor" aria-label="Cerrar publicidad de Sancor Seguros">Cerrar <span aria-hidden="true">×</span></button>
+    </div>
+    <img src="assets/sancor-seguros.png" alt="Sancor Seguros, cartel luminoso en un estadio" width="1000" height="563">
+  </aside>
+  <script src="publicidad.js?v=1"></script>
 
   <div class="tooltip" id="tooltip" hidden></div>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
