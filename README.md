@@ -1,6 +1,6 @@
 # Campamento del Age 2026
 
-Dashboard del Campamento del Age 2026 del clan [LW]: partidas de Age of Empires II: Definitive Edition, comidas y actividades.
+Dashboard del Campamento del Age 2026, el evento del clan LW: partidas de Age of Empires II: Definitive Edition, comidas y actividades.
 
 Sitio: <https://joaquinmansilla.github.io/campamento-del-age/>
 

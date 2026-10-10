@@ -93,6 +93,7 @@ function calcular(miembros, partidas) {
       castillos: media(s, 'castillos'),
       aldeanos: media(s, 'aldeanos'),
       tropas: media(s, 'tropas'),
+      housed: promedio(s.detalles.map((d) => d.housed?.segundos).filter((v) => v != null)),
     }))
     .sort((a, b) => b.pct - a.pct || b.g - a.g || (b.eapm || 0) - (a.eapm || 0) || a.miembro.orden - b.miembro.orden);
 
@@ -108,6 +109,7 @@ function pintarMarcador(st) {
   const { clan } = st;
   const decididas = clan.g + clan.p;
   const rapido = [...st.guerreros].filter((s) => s.eapm != null).sort((a, b) => b.eapm - a.eapm)[0];
+  const housed = [...st.guerreros].filter((s) => s.housed != null).sort((a, b) => b.housed - a.housed)[0];
   const racha = clan.racha > 0 ? plural(clan.racha, 'victoria seguida', 'victorias seguidas')
     : clan.racha < 0 ? plural(-clan.racha, 'derrota seguida', 'derrotas seguidas') : 'Sin racha';
   const fichas = [
@@ -115,6 +117,7 @@ function pintarMarcador(st) {
     ['Efectividad', decididas ? `${pct(clan.g, decididas)}%` : '—', racha],
     ['Tiempo en batalla', duracion(clan.minutos), `${duracion(clan.minutos / clan.pj)} por partida`],
     rapido ? ['Manos más rápidas', rapido.miembro.nick, `${numero(rapido.eapm)} APM de promedio`] : ['Manos más rápidas', '—', 'Esperando las grabaciones'],
+    housed && housed.housed > 0 ? ['Rey del housed', housed.miembro.nick, `${reloj(housed.housed)} sin casas por partida`] : ['Rey del housed', '—', 'Nadie se quedó sin casas'],
   ];
   $('marcador').innerHTML = `
     <div class="record">
@@ -163,7 +166,7 @@ function pintarGuerreros(st, tag) {
         <div><dt>Perdidas</dt><dd>${s.p}</dd></div>
         <div><dt>Feudal</dt><dd>${reloj(s.feudal)}</dd></div>
         <div><dt>Castillos</dt><dd>${reloj(s.castillos)}</dd></div>
-        <div><dt>Aldeanos</dt><dd>${numero(s.aldeanos)}</dd></div>
+        <div><dt>Housed</dt><dd>${reloj(s.housed)}</dd></div>
       </dl>
       <div class="guerrero-pie">
         <span>${imagen(s.civFav.img, 'civ')} ${esc(s.civFav.nombre)}</span>
@@ -270,10 +273,12 @@ function pintarBatallas(partidas) {
       <td class="num">${numero(d.aldeanos)}</td>
       <td class="num">${numero(d.tropas)}</td>
       <td class="num">${numero(d.edificios)}</td>
+      <td class="num">${reloj(d.housed?.segundos)}</td>
     </tr>`;
   };
   const cronica = (p) => (p.cronica ? `<div class="cronica">
       <h3>${esc(p.cronica.titulo)}</h3>
+      ${'speechSynthesis' in window ? `<button class="boton secundario chico narrar" data-partida="${p.id}">▶ Escuchar la crónica</button>` : ''}
       <p>${esc(p.cronica.relato)}</p>
       ${p.cronica.definicion ? `<h4>Lo que definió la partida</h4><p>${esc(p.cronica.definicion)}</p>` : ''}
       ${p.cronica.destacados?.length ? `<ul>${p.cronica.destacados.map((d) => `<li>${esc(d)}</li>`).join('')}</ul>` : ''}
@@ -296,7 +301,7 @@ function pintarBatallas(partidas) {
       }).join('')}</ol>
     </details>`;
   };
-  const bando = (titulo, filas) => (filas ? `<tr class="bando"><th colspan="9">${titulo}</th></tr>${filas}` : '');
+  const bando = (titulo, filas) => (filas ? `<tr class="bando"><th colspan="10">${titulo}</th></tr>${filas}` : '');
   $('batallas').innerHTML = [...partidas].reverse().map((p, i) => `
     <article class="batalla ${p.resultado}">
       <div class="batalla-mapa">
@@ -312,7 +317,7 @@ function pintarBatallas(partidas) {
         <table class="batalla-tabla">
           <thead><tr>
             <th>Jugador</th><th>Civilización</th><th class="num">APM</th><th class="num">Feudal</th><th class="num">Castillos</th>
-            <th class="num">Imperial</th><th class="num">Aldeanos</th><th class="num">Tropas</th><th class="num">Edificios</th>
+            <th class="num">Imperial</th><th class="num">Aldeanos</th><th class="num">Tropas</th><th class="num">Edificios</th><th class="num">Housed</th>
           </tr></thead>
           <tbody>
             ${bando('Clan', p.clan.map((j) => fila(j, true)).join('') + p.aliados.map((j) => fila(j, false)).join(''))}
@@ -323,6 +328,38 @@ function pintarBatallas(partidas) {
       ${chat(p)}
       ${p.tieneDetalle ? '' : '<p class="batalla-meta">La grabación de esta partida todavía no está procesada.</p>'}
     </article>`).join('');
+}
+
+// Narración con la voz del navegador: grave y pausada, lo más parecido a un narrador de campaña
+// que se puede lograr sin grabar audio.
+function textoNarrado(c) {
+  return [c.titulo, c.relato, c.definicion, ...(c.perlitas || []).map((x) => `${x.jugador}. ${x.texto}`)].filter(Boolean).join('. ');
+}
+
+function prepararNarracion(partidas) {
+  if (!('speechSynthesis' in window)) return;
+  const porId = new Map(partidas.map((p) => [String(p.id), p]));
+  const restaurar = () => { for (const b of document.querySelectorAll('.narrar')) b.textContent = '▶ Escuchar la crónica'; };
+  $('batallas').addEventListener('click', (e) => {
+    const boton = e.target.closest('.narrar');
+    if (!boton) return;
+    const sonaba = boton.textContent.startsWith('■');
+    speechSynthesis.cancel();
+    restaurar();
+    if (sonaba) return;
+    const voces = speechSynthesis.getVoices().filter((v) => v.lang.startsWith('es'));
+    const voz = voces.find((v) => /es-(AR|419|MX|US)/.test(v.lang)) || voces[0];
+    const frase = new SpeechSynthesisUtterance(textoNarrado(porId.get(boton.dataset.partida).cronica));
+    frase.lang = voz ? voz.lang : 'es-AR';
+    if (voz) frase.voice = voz;
+    frase.pitch = 0.6;
+    frase.rate = 0.9;
+    frase.onend = frase.onerror = restaurar;
+    boton.textContent = '■ Detener';
+    speechSynthesis.speak(frase);
+  });
+  speechSynthesis.getVoices();
+  window.addEventListener('pagehide', () => speechSynthesis.cancel());
 }
 
 async function iniciar() {
@@ -340,7 +377,7 @@ async function iniciar() {
   window.MIEMBROS = miembros;
   $('titulo').textContent = campamento.nombre;
   $('anio').textContent = campamento.anio;
-  $('tag').textContent = campamento.clan.tag;
+  $('tag').textContent = campamento.clan.nombre || campamento.clan.tag;
   document.title = `${campamento.nombre} ${campamento.anio}`;
   document.dispatchEvent(new Event('miembros-listos'));
 
@@ -353,7 +390,7 @@ async function iniciar() {
   const st = calcular(miembros, partidas);
   const dias = new Set(partidas.map((p) => p.inicio.toDateString())).size;
   $('bajada').textContent = `${plural(partidas.length, 'batalla', 'batallas')} en ${plural(dias, 'jornada', 'jornadas')} · desde el ${partidas[0].inicio.toLocaleDateString('es-AR', { day: 'numeric', month: 'long' })}`;
-  $('nota-cronica').textContent = `Cuentan las partidas con al menos ${campamento.minimoClan} miembros del clan. La más reciente primero. Los tiempos de edad son en reloj de juego; aldeanos y tropas son los que se mandaron a crear.`;
+  $('nota-cronica').textContent = `Cuentan las partidas con al menos ${campamento.minimoClan} miembros del clan. La más reciente primero. Los tiempos son en reloj de juego; aldeanos y tropas son los que se mandaron a crear. Housed es el tiempo estimado, en los primeros 20 minutos, con unidades frenadas por falta de casas.`;
 
   pintarMarcador(st);
   pintarGuerreros(st, campamento.clan.tag);
@@ -371,6 +408,7 @@ async function iniciar() {
       <div class="tooltip-fila"><span>Derrotas</span><b>${mp.p}</b></div>`);
   pintarApm(partidas, st);
   pintarBatallas(partidas);
+  prepararNarracion(partidas);
 
   let pendiente;
   window.addEventListener('resize', () => {

@@ -29,7 +29,7 @@ from mgz.fast import Operation
 RAIZ = pathlib.Path(__file__).resolve().parent.parent
 CABECERAS = {'User-Agent': 'campamento-del-age (https://github.com/JoaquinMansilla/campamento-del-age)'}
 # Si cambia lo que se extrae, subir la versión hace que se reprocesen las partidas recientes
-VERSION = 4
+VERSION = 7
 DIAS_DE_REINTENTO = 4
 # Tecnología de cada edad y segundos que tarda en investigarse (respaldo si falta el aviso del juego)
 EDADES = {101: ('feudal', 130), 102: ('castillos', 160), 103: ('imperial', 190)}
@@ -48,6 +48,10 @@ CHAT_DESDE_MS = 90000
 ORDENES_DE_MOVIMIENTO = {'MOVE', 'ORDER', 'DE_ATTACK_MOVE', 'PATROL', 'ATTACK_GROUND'}
 TRAMO_MS = 180000
 EDIFICIOS_SIN_INTERES = {50, 70, 72, 117, 155}  # granjas, casas y muros no cuentan como avanzada
+# Unidades hechas para tirar edificios: saber quién las creó ayuda a explicar una rendición
+ASEDIO = {'Petard', 'Battering Ram', 'Capped Ram', 'Siege Ram', 'Trebuchet', 'Trebuchet (Packed)', 'Mangonel', 'Onager',
+          'Siege Onager', 'Bombard Cannon', 'Houfnice', 'Siege Tower', 'Armored Elephant', 'Siege Elephant', 'Demolition Ship',
+          'Heavy Demolition Ship', 'Demolition Raft', 'Cannon Galleon', 'Elite Cannon Galleon'}
 CURIOSIDADES_POR_ACCION = {
     'DELETE': 'cosasPropiasBorradas', 'FLARE': 'bengalas', 'TOWN_BELL': 'campanazos', 'WALL': 'tramosDeMuro',
     'ATTACK_GROUND': 'ataquesAlSuelo', 'GATE': 'puertasTrabadas', 'DROP_RELIC': 'reliquiasSoltadas',
@@ -66,6 +70,64 @@ def nombres_de_unidades():
 
 
 UNIDADES = nombres_de_unidades()
+
+
+# "Housed": tener la población al tope de lo que permiten las casas, con unidades esperando para salir.
+# La grabación no trae la población, así que se estima simulando los primeros minutos, cuando casi no
+# hay bajas: población = lo que se mandó a crear; tope = casas, centros urbanos y castillos colocados.
+HOUSED_HASTA_S = 20 * 60
+VIVIENDA = {70: (5, 30), 109: (5, 110), 621: (5, 110), 82: (20, 90)}  # edificio: (lugares, segundos hasta estar listo)
+SEGUNDOS_DE_CREACION = {83: 25, 293: 25, 13: 40, 128: 50, 17: 36}
+SEGUNDOS_DE_CREACION_POR_DEFECTO = 30
+# Mientras investiga, el edificio no crea unidades (sobre todo el centro urbano al subir de edad)
+SEGUNDOS_DE_INVESTIGACION = {101: 130, 102: 160, 103: 190, 22: 25, 8: 25, 213: 75, 249: 55}
+SEGUNDOS_DE_INVESTIGACION_POR_DEFECTO = 40
+CIVS_SIN_CASAS = {'Hunos'}
+
+
+def estimar_housed(construcciones, colas, civ, hasta_s):
+    """Segundos (estimados) con unidades frenadas por falta de casas, y cuántas veces pasó."""
+    if civ in CIVS_SIN_CASAS:
+        return None
+    hasta_s = min(hasta_s, HOUSED_HASTA_S)
+    # En mapas nómadas se arranca sin centro urbano: no hay lugar hasta levantarlo
+    nomada = any(e in (109, 621) and t < 180000 for t, _, _, e in construcciones)
+    vivienda = sorted((t / 1000 + VIVIENDA[e][1], VIVIENDA[e][0] * (2 if civ == 'Incas' and e == 70 else 1))
+                      for t, _, _, e in construcciones if e in VIVIENDA)
+    pedidos = sorted(colas, key=lambda p: p[0])
+    tope, poblacion = (0, 3) if nomada else (5, 4)
+    edificios = collections.defaultdict(lambda: {'cola': collections.deque(), 'falta': 0})
+    housed = episodios = 0
+    estaba = False
+    for ahora in range(hasta_s):
+        while vivienda and vivienda[0][0] <= ahora:
+            tope = min(200, tope + vivienda.pop(0)[1])
+        while pedidos and pedidos[0][0] / 1000 <= ahora:
+            _, unidad, cantidad, donde = pedidos.pop(0)
+            for i in range(cantidad):
+                if unidad is None:  # investigación: ocupa el edificio pero no suma población
+                    edificios[donde[0] if donde else 0]['cola'].append((cantidad, False))
+                    break
+                edificios[donde[i % len(donde)] if donde else 0]['cola'].append(
+                    (SEGUNDOS_DE_CREACION.get(unidad, SEGUNDOS_DE_CREACION_POR_DEFECTO), True))
+        frenado = False
+        for e in edificios.values():
+            if e['falta'] > 0:
+                e['falta'] -= 1
+            elif e['cola']:
+                segundos, ocupa_lugar = e['cola'][0]
+                if not ocupa_lugar or poblacion < tope:
+                    poblacion += ocupa_lugar
+                    e['falta'] = segundos - 1
+                    e['cola'].popleft()
+                else:
+                    frenado = True
+        if frenado:
+            housed += 1
+            if not estaba:
+                episodios += 1
+        estaba = frenado
+    return {'segundos': housed, 'veces': episodios}
 
 
 def pedir(url, cuerpo=None, cabeceras=None):
@@ -104,7 +166,7 @@ def numeros_de_jugador(cabecera, perfiles):
     return numeros
 
 
-def leer(grabacion, perfiles, equipos):
+def leer(grabacion, perfiles, equipos, civs):
     """Devuelve (segundos de juego, estadísticas por perfil, mensajes de chat)."""
     largo = struct.unpack_from('<I', grabacion)[0]
     numeros = numeros_de_jugador(zlib.decompress(grabacion[8:largo], wbits=-15), perfiles)
@@ -121,6 +183,9 @@ def leer(grabacion, perfiles, equipos):
     construcciones = collections.defaultdict(list)
     ordenes = []
     campanazos = []
+    ataques = []
+    pedidos = collections.defaultdict(list)
+    asedio = collections.defaultdict(dict)
     pausa = collections.defaultdict(lambda: (0, 0))
     extras = collections.defaultdict(dict)
     chat = []
@@ -171,6 +236,8 @@ def leer(grabacion, perfiles, equipos):
                         construcciones[jugador].append((ms, d['x'], d['y'], d.get('building_id')))
                     elif accion.name in ORDENES_DE_MOVIMIENTO:
                         ordenes.append((ms, jugador, d['x'], d['y']))
+                        if accion.name == 'ORDER' and d.get('target_id'):
+                            ataques.append((ms, jugador, d['x'], d['y']))
                 if accion.name == 'DE_QUEUE':
                     unidad = d.get('unit_id')
                     if unidad in ALDEANOS:
@@ -179,6 +246,12 @@ def leer(grabacion, perfiles, equipos):
                         s['tropas'] += d.get('amount', 1)
                         extras[jugador].setdefault('primeraTropa', round(ms / 1000))
                     colas[jugador][unidad] += d.get('amount', 1)
+                    pedidos[jugador].append((ms, unidad, d.get('amount', 1), tuple(d.get('object_ids') or ())))
+                    nombre = UNIDADES.get(str(unidad))
+                    if nombre in ASEDIO:
+                        a = asedio[jugador].setdefault(nombre, {'cantidad': 0, 'desde': round(ms / 1000)})
+                        a['cantidad'] += d.get('amount', 1)
+                        a['hasta'] = round(ms / 1000)
                 elif accion.name == 'BUILD':
                     s['edificios'] += 1
                     if d.get('building_id') in EDIFICIOS:
@@ -190,6 +263,8 @@ def leer(grabacion, perfiles, equipos):
                 elif accion.name == 'RESIGN':
                     extras[jugador].setdefault('rendicion', round(ms / 1000))
                 elif accion.name == 'RESEARCH':
+                    pedidos[jugador].append((ms, None, SEGUNDOS_DE_INVESTIGACION.get(d.get('technology_id'), SEGUNDOS_DE_INVESTIGACION_POR_DEFECTO),
+                                             tuple(d.get('object_ids') or ())))
                     edad = EDADES.get(d.get('technology_id'))
                     if edad:
                         # Si canceló y volvió a pedirla, vale el último clic
@@ -216,11 +291,13 @@ def leer(grabacion, perfiles, equipos):
                 'unidadesMasCreadas': {UNIDADES[str(u)]: n for u, n in colas[numero].most_common(4) if str(u) in UNIDADES},
                 'pausaMasLarga': {'segundos': round(pausa[numero][0] / 1000), 'desde': round(pausa[numero][1] / 1000)},
             },
+            'asedio': asedio[numero],
+            'housed': estimar_housed(construcciones[numero], pedidos[numero], civs.get(perfil), round(ms / 1000)),
         }
-    return round(ms / 1000), jugadores, chat, desarrollo(numeros, equipos, construcciones, ordenes, campanazos, ms)
+    return round(ms / 1000), jugadores, chat, desarrollo(numeros, equipos, construcciones, ordenes, campanazos, ataques, ms)
 
 
-def desarrollo(numeros, equipos, construcciones, ordenes, campanazos, ms):
+def desarrollo(numeros, equipos, construcciones, ordenes, campanazos, ataques, ms):
     """Dónde se jugó la partida: cuántas órdenes dio cada equipo en territorio del rival, tramo a tramo.
 
     La grabación no dice quién ganó cada pelea, pero sí adónde mandó sus unidades cada jugador. Un equipo que
@@ -260,16 +337,32 @@ def desarrollo(numeros, equipos, construcciones, ordenes, campanazos, ms):
             if n in numeros and edificio not in EDIFICIOS_SIN_INTERES and str(edificio) in UNIDADES and rival(n, x, y):
                 avanzadas.append({'t': round(t / 1000), 'jugador': numeros[n], 'edificio': UNIDADES[str(edificio)],
                                   'enTerritorioDe': numeros[rival(n, x, y)]})
+    # Una orden sobre el lugar exacto donde un rival levantó un edificio es un ataque a ese edificio
+    edificios = [(n, x, y, UNIDADES[str(e)], t) for n, lista in construcciones.items() if n in numeros
+                 for t, x, y, e in lista if e not in EDIFICIOS_SIN_INTERES and str(e) in UNIDADES]
+    golpes = {}
+    for t, n, x, y in ataques:
+        if n not in numeros:
+            continue
+        for dueno, ex, ey, nombre, construido in edificios:
+            if construido < t and abs(ex - x) <= 1 and abs(ey - y) <= 1 and equipos.get(numeros[dueno]) != equipos.get(numeros[n]):
+                g = golpes.setdefault((n, dueno, ex, ey), {'atacante': numeros[n], 'dueno': numeros[dueno], 'edificio': nombre,
+                                                           'desde': round(t / 1000), 'ordenes': 0})
+                g['ordenes'] += 1
+                g['hasta'] = round(t / 1000)
+                break
+
     return {
         'tramos': tramos,
+        'ataquesAEdificios': sorted(golpes.values(), key=lambda g: g['desde'])[-60:],
         'edificiosEnTerritorioRival': sorted(avanzadas, key=lambda a: a['t'])[:25],
         'campanazos': [{'t': round(t / 1000), 'jugador': numeros[n]} for t, n in campanazos if n in numeros][:30],
     }
 
 
-def analizar(grabaciones, equipos):
+def analizar(grabaciones, equipos, civs):
     perfiles = list(equipos)
-    lecturas = [leer(g, perfiles, equipos) for g in grabaciones]
+    lecturas = [leer(g, perfiles, equipos, civs) for g in grabaciones]
     if not lecturas:
         return None
     # La grabación más larga es la del que se quedó hasta el final
@@ -309,7 +402,8 @@ def main():
     for fila in pendientes:
         perfiles = [j['id'] for j in fila['datos']['jugadores']]
         grabaciones = bajar_grabaciones(fila['id'], perfiles)
-        detalle = analizar(grabaciones, {j['id']: j['equipo'] for j in fila['datos']['jugadores']}) if grabaciones else None
+        detalle = analizar(grabaciones, {j['id']: j['equipo'] for j in fila['datos']['jugadores']},
+                           {j['id']: j['civ'] for j in fila['datos']['jugadores']}) if grabaciones else None
         if not detalle:
             print(f"{fila['id']}: sin grabación utilizable ({len(grabaciones)} bajadas)")
             continue

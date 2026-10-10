@@ -140,7 +140,7 @@ h2 {
 }
 .fichas {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap: 12px;
   padding-top: 18px;
   border-top: 1px solid var(--grilla);
@@ -281,6 +281,7 @@ circle.marcador { stroke: var(--panel); stroke-width: 2; }
 .batalla-civ { color: var(--tinta-2); }
 
 .cronica { padding: 12px 14px; border-left: 2px solid var(--oro-oscuro); background: rgba(224, 185, 95, 0.06); border-radius: 0 6px 6px 0; }
+.narrar { float: right; margin: 0 0 8px 12px; }
 .cronica h3 { margin: 0 0 6px; font-family: var(--titulos); font-weight: 700; font-size: 16px; color: var(--oro); }
 .cronica p { margin: 0; max-width: 78ch; color: var(--pergamino); }
 .cronica ul { margin: 10px 0 0; padding-left: 18px; display: grid; gap: 4px; max-width: 78ch; font-size: 14px; color: var(--tinta-2); }

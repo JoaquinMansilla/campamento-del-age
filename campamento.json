@@ -5,6 +5,7 @@
   "hasta": null,
   "minimoClan": 2,
   "clan": {
+    "nombre": "LW",
     "tag": "[LW]",
     "miembros": [
       { "id": 302551, "nick": "DuranDarte" },
