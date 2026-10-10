@@ -21,13 +21,14 @@ import urllib.request
 import zipfile
 import zlib
 
+import aocref
 from mgz import fast
 from mgz.fast import Operation
 
 RAIZ = pathlib.Path(__file__).resolve().parent.parent
 CABECERAS = {'User-Agent': 'campamento-del-age (https://github.com/JoaquinMansilla/campamento-del-age)'}
 # Si cambia lo que se extrae, subir la versión hace que se reprocesen las partidas recientes
-VERSION = 2
+VERSION = 3
 DIAS_DE_REINTENTO = 4
 # Tecnología de cada edad y segundos que tarda en investigarse (respaldo si falta el aviso del juego)
 EDADES = {101: ('feudal', 130), 102: ('castillos', 160), 103: ('imperial', 190)}
@@ -37,6 +38,26 @@ ALDEANOS = {83, 293}
 # Unidades que no cuentan como tropas: pesqueros, mercantes, carretas y transportes
 CIVILES = {13, 17, 128, 545}
 EDIFICIOS = {82: 'fortalezas', 109: 'centrosUrbanos', 621: 'centrosUrbanos', 276: 'maravillas'}
+# Material para las perlitas de la crónica: cosas que hizo cada jugador y que suelen dar para chiste
+CURIOSIDADES_POR_EDIFICIO = {50: 'granjas', 70: 'casas', 79: 'torres', 234: 'torres', 235: 'torres', 236: 'torres'}
+CURIOSIDADES_POR_ACCION = {
+    'DELETE': 'cosasPropiasBorradas', 'FLARE': 'bengalas', 'TOWN_BELL': 'campanazos', 'WALL': 'tramosDeMuro',
+    'ATTACK_GROUND': 'ataquesAlSuelo', 'GATE': 'puertasTrabadas', 'DROP_RELIC': 'reliquiasSoltadas',
+    'TRIBUTE': 'tributos', 'DE_TRIBUTE': 'tributos', 'BACK_TO_WORK': 'ordenesDeVolverAlTrabajo',
+    'DE_AUTOSCOUT': 'exploracionesAutomaticas', 'PATROL': 'patrullas',
+}
+
+
+def nombres_de_unidades():
+    """Nombres (en inglés) de las unidades, del catálogo que trae el parser."""
+    ruta = pathlib.Path(aocref.__file__).parent / 'data' / 'datasets' / '100.json'
+    try:
+        return json.loads(ruta.read_text())['objects']
+    except (OSError, ValueError, KeyError):
+        return {}
+
+
+UNIDADES = nombres_de_unidades()
 
 
 def pedir(url, cuerpo=None, cabeceras=None):
@@ -86,6 +107,10 @@ def leer(grabacion, perfiles):
     ms = 0
     stats = collections.defaultdict(collections.Counter)
     por_clic = collections.defaultdict(dict)
+    curiosidades = collections.defaultdict(collections.Counter)
+    colas = collections.defaultdict(collections.Counter)
+    ultima = {}
+    pausa = collections.defaultdict(lambda: (0, 0))
     extras = collections.defaultdict(dict)
     chat = []
     try:
@@ -104,6 +129,8 @@ def leer(grabacion, perfiles):
                     # El juego avisa por chat el momento exacto en que cada jugador sube de edad
                     extras[int(aviso.group(1))].setdefault(EDAD_POR_AVISO[aviso.group(2)], round(ms / 1000))
                 elif texto and not texto.startswith('<') and mensaje.get('player') in numeros:
+                    if mensaje.get('tauntNumber', -1) != -1:
+                        curiosidades[mensaje['player']]['burlasPorChat'] += 1
                     chat.append({
                         't': round(ms / 1000),
                         'jugador': numeros[mensaje['player']],
@@ -117,16 +144,26 @@ def leer(grabacion, perfiles):
                     continue
                 s = stats[jugador]
                 s['acciones'] += 1
+                # La pausa más larga sin tocar nada (después del primer minuto, que es la carga)
+                if jugador in ultima and ms - ultima[jugador] > pausa[jugador][0] and ms > 60000:
+                    pausa[jugador] = (ms - ultima[jugador], ultima[jugador])
+                ultima[jugador] = ms
+                if accion.name in CURIOSIDADES_POR_ACCION:
+                    curiosidades[jugador][CURIOSIDADES_POR_ACCION[accion.name]] += 1
                 if accion.name == 'DE_QUEUE':
                     unidad = d.get('unit_id')
                     if unidad in ALDEANOS:
                         s['aldeanos'] += d.get('amount', 1)
                     elif unidad not in CIVILES:
                         s['tropas'] += d.get('amount', 1)
+                        extras[jugador].setdefault('primeraTropa', round(ms / 1000))
+                    colas[jugador][unidad] += d.get('amount', 1)
                 elif accion.name == 'BUILD':
                     s['edificios'] += 1
                     if d.get('building_id') in EDIFICIOS:
                         s[EDIFICIOS[d['building_id']]] += 1
+                    if d.get('building_id') in CURIOSIDADES_POR_EDIFICIO:
+                        curiosidades[jugador][CURIOSIDADES_POR_EDIFICIO[d['building_id']]] += 1
                 elif accion.name in ('BUY', 'SELL'):
                     s['comercio'] += 1
                 elif accion.name == 'RESIGN':
@@ -153,6 +190,11 @@ def leer(grabacion, perfiles):
             **{campo: s[campo] for campo in ('aldeanos', 'tropas', 'edificios', 'tecnologias', 'fortalezas', 'centrosUrbanos', 'maravillas', 'comercio')},
             **por_clic[numero],
             **extras[numero],
+            'curiosidades': {
+                **curiosidades[numero],
+                'unidadesMasCreadas': {UNIDADES[str(u)]: n for u, n in colas[numero].most_common(4) if str(u) in UNIDADES},
+                'pausaMasLarga': {'segundos': round(pausa[numero][0] / 1000), 'desde': round(pausa[numero][1] / 1000)},
+            },
         }
     return round(ms / 1000), jugadores, chat
 

@@ -287,6 +287,12 @@ circle.marcador { stroke: var(--panel); stroke-width: 2; }
 .cronica blockquote { margin: 10px 0 0; font-style: italic; color: var(--pergamino); }
 .cronica cite { font-style: normal; font-size: 13px; color: var(--tinta-3); }
 .cronica cite::before { content: "— "; }
+.cronica h4 { margin: 12px 0 6px; font-family: var(--titulos); font-size: 13px; letter-spacing: 0.08em; color: var(--oro); }
+.perlitas { margin: 0; display: grid; gap: 6px; max-width: 78ch; font-size: 14px; }
+.perlitas dt { display: inline; font-weight: 600; }
+.perlitas dt::after { content: ": "; }
+.perlitas dd { display: inline; margin: 0; color: var(--tinta-2); }
+.guerrero-perlita { margin: 0; font-size: 13px; font-style: italic; color: var(--tinta-2); }
 .chat summary { cursor: pointer; font-size: 13px; color: var(--oro); }
 .chat ol { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 4px; max-height: 320px; overflow-y: auto; font-size: 14px; }
 .chat li { display: grid; grid-template-columns: 44px minmax(90px, 160px) minmax(0, 1fr); gap: 10px; align-items: baseline; }

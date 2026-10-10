@@ -17,6 +17,8 @@ import urllib.request
 RAIZ = pathlib.Path(__file__).resolve().parent.parent
 MAXIMO_POR_CORRIDA = 3
 MAXIMO_DE_MENSAJES = 150
+# Si cambia lo que se pide, subir la versión hace que se reescriban las crónicas
+VERSION = 2
 
 INSTRUCCIONES = """Sos el cronista del Campamento del Age: un grupo de amigos argentinos del clan [LW] que juega \
 Age of Empires II. Te paso los datos de una partida en JSON y escribís una crónica corta, en español rioplatense, \
@@ -31,7 +33,16 @@ Respondé únicamente con un objeto JSON, sin texto alrededor, con esta forma:
  "relato": "3 a 5 oraciones contando cómo fue la partida",
  "destacados": ["3 a 5 momentos o datos llamativos, una oración cada uno"],
  "frase": {"jugador": "nombre tal cual figura", "texto": "la mejor frase del chat, textual"} o null si no hay chat que valga la pena,
- "figura": "nombre del miembro del clan que más se destacó"}
+ "figura": "nombre del miembro del clan que más se destacó",
+ "perlitas": [{"jugador": "nombre de un miembro del clan", "texto": "una perlita graciosa sobre lo que hizo en esta partida"}]}
+
+Las perlitas son lo más importante: una por cada miembro del clan que jugó, de una sola oración, en tono de \
+cargada entre amigos y nada técnico (sin APM ni numeritos sueltos: contá la anécdota). Sacalas de "curiosidades" \
+(pausas largas sin tocar nada, cosas propias borradas, campanazos, bengalas, muros, granjas, casas, burlas por chat, \
+unidades que más creó, cuánto tardó en hacer su primera tropa), de cuándo se rindió y de lo que dijo en el chat. \
+"unidadesMasCreadas" viene con nombres en inglés: traducilos al nombre del juego en español. Los datos no dicen \
+cómo murió ninguna unidad ni qué pasó en las peleas, así que no inventes muertes, jabalíes ni batallas: solo \
+exagerá con gracia lo que sí figura.
 
 No uses insultos ni reproduzcas mensajes ofensivos del chat; si los hay, salteálos."""
 
@@ -45,6 +56,14 @@ def pedir(url, cuerpo=None, cabeceras=None):
 
 def reloj(segundos):
     return None if segundos is None else f'{segundos // 60}:{segundos % 60:02d}'
+
+
+def curiosidades(d):
+    c = dict(d.get('curiosidades') or {})
+    pausa = c.pop('pausaMasLarga', None)
+    if pausa and pausa['segundos'] >= 45:
+        c['pausaMasLargaSinTocarNada'] = {'duro': reloj(pausa['segundos']), 'empezoEn': reloj(pausa['desde'])}
+    return c
 
 
 def resumen(fila, clan):
@@ -61,6 +80,8 @@ def resumen(fila, clan):
             'aldeanos': d.get('aldeanos'), 'tropas': d.get('tropas'), 'edificios': d.get('edificios'),
             'fortalezas': d.get('fortalezas'), 'centrosUrbanos': d.get('centrosUrbanos'), 'maravillas': d.get('maravillas'),
             'operacionesDeMercado': d.get('comercio'), 'seRindioEn': reloj(d.get('rendicion')),
+            'primeraTropa': reloj(d.get('primeraTropa')),
+            **({'curiosidades': curiosidades(d)} if j['id'] in clan else {}),
         })
     chat = [{'minuto': reloj(m['t']), 'jugador': nombres.get(m['jugador'], '?'), 'canal': m['canal'], 'texto': m['texto']}
             for m in detalle.get('chat', [])][-MAXIMO_DE_MENSAJES:]
@@ -82,6 +103,9 @@ def escribir_cronica(partida):
         'destacados': [str(d)[:300] for d in cronica.get('destacados', [])][:5],
         'frase': {'jugador': str(frase.get('jugador', ''))[:60], 'texto': str(frase.get('texto', ''))[:200]} if frase else None,
         'figura': str(cronica.get('figura') or '')[:60],
+        'perlitas': [{'jugador': str(p.get('jugador', ''))[:60], 'texto': str(p.get('texto', ''))[:300]}
+                     for p in cronica.get('perlitas', []) if isinstance(p, dict)][:8],
+        'version': VERSION,
     }
 
 
@@ -94,7 +118,8 @@ def main():
     token = os.environ.get('SYNC_TOKEN')
 
     # Las partidas abandonadas al empezar no tienen jugadores en el detalle y no llevan crónica
-    filtro = urllib.parse.urlencode({'select': 'id,datos,detalle', 'detalle->jugadores': 'not.is.null', 'cronica': 'is.null',
+    filtro = urllib.parse.urlencode({'select': 'id,datos,detalle', 'detalle->jugadores': 'not.is.null',
+                                     'or': f'(cronica.is.null,cronica->>version.is.null,cronica->>version.neq.{VERSION})',
                                      'order': 'inicio.desc', 'limit': str(MAXIMO_POR_CORRIDA)})
     pendientes = json.loads(pedir(f'{url}/rest/v1/partidas?{filtro}', cabeceras=supabase))
     for fila in pendientes:

@@ -40,7 +40,7 @@ function mostrarTooltip(html, x, y) {
 const ocultarTooltip = () => { $('tooltip').hidden = true; };
 
 function calcular(miembros, partidas) {
-  const guerreros = new Map(miembros.map((m) => [m.id, { miembro: m, pj: 0, g: 0, racha: 0, civs: new Map(), detalles: [], serie: [] }]));
+  const guerreros = new Map(miembros.map((m) => [m.id, { miembro: m, pj: 0, g: 0, racha: 0, civs: new Map(), detalles: [], serie: [], perlita: null }]));
   const civs = new Map();
   const mapas = new Map();
   const clan = { pj: 0, g: 0, p: 0, internas: 0, minutos: 0, racha: 0 };
@@ -67,6 +67,8 @@ function calcular(miembros, partidas) {
       if (j.gano) s.g++;
       s.racha = j.gano ? Math.max(s.racha, 0) + 1 : Math.min(s.racha, 0) - 1;
       if (j.detalle) { s.detalles.push(j.detalle); s.serie[i] = j.detalle.eapm; }
+      const perlita = p.cronica?.perlitas?.find((x) => x.jugador === j.miembro.nick);
+      if (perlita) s.perlita = perlita.texto;
       const propia = s.civs.get(j.civ) || { nombre: j.civ, img: j.civImg, pj: 0 };
       propia.pj++;
       s.civs.set(j.civ, propia);
@@ -167,6 +169,7 @@ function pintarGuerreros(st, tag) {
         <span>${imagen(s.civFav.img, 'civ')} ${esc(s.civFav.nombre)}</span>
         <span>${racha}</span>
       </div>
+      ${s.perlita ? `<p class="guerrero-perlita">${esc(s.perlita)}</p>` : ''}
     </article>`;
   }).join('');
 }
@@ -274,6 +277,10 @@ function pintarBatallas(partidas) {
       <p>${esc(p.cronica.relato)}</p>
       ${p.cronica.destacados?.length ? `<ul>${p.cronica.destacados.map((d) => `<li>${esc(d)}</li>`).join('')}</ul>` : ''}
       ${p.cronica.frase?.texto ? `<blockquote>«${esc(p.cronica.frase.texto)}» <cite>${esc(p.cronica.frase.jugador)}</cite></blockquote>` : ''}
+      ${p.cronica.perlitas?.length ? `<h4>Perlitas</h4><dl class="perlitas">${p.cronica.perlitas.map((x) => {
+        const j = p.clan.find((c) => c.miembro.nick === x.jugador);
+        return `<div><dt>${j ? `<span class="punto" style="background:${colorDe(j.miembro)}"></span>` : ''}${esc(x.jugador)}</dt><dd>${esc(x.texto)}</dd></div>`;
+      }).join('')}</dl>` : ''}
     </div>` : '');
   const chat = (p) => {
     if (!p.chat.length) return '';

@@ -12,7 +12,7 @@ Las partidas no se cargan a mano. Durante el campamento, una rutina programada e
 
 1. **Sincronizar** ([`scripts/sincronizar.mjs`](scripts/sincronizar.mjs)): pide el historial reciente de los miembros del clan al backend de World's Edge, el mismo que usa el juego (ver [ustacode/aoe2-apis](https://github.com/ustacode/aoe2-apis)), se queda con las partidas terminadas del campamento con al menos `minimoClan` miembros y las guarda en la tabla `partidas` de Supabase.
 2. **Leer las grabaciones** ([`scripts/grabaciones.py`](scripts/grabaciones.py)): baja de aoe.ms la grabación de cada jugador y saca APM, tiempos de subida de edad, aldeanos y tropas creados, edificios, rendiciones y el chat (incluido el de los rivales, si su grabación está disponible). Lo guarda en la columna `detalle`.
-3. **Escribir la crónica** ([`scripts/cronicas.py`](scripts/cronicas.py)): le pasa el detalle a Claude (CLI `claude`, sin herramientas) y guarda el relato en la columna `cronica`.
+3. **Escribir la crónica** ([`scripts/cronicas.py`](scripts/cronicas.py)): le pasa el detalle a Claude (CLI `claude`, sin herramientas) y guarda el relato y una perlita por jugador en la columna `cronica`.
 
 El sitio lee todo de Supabase, así que las novedades aparecen sin republicar nada. Fuera de las fechas de `campamento.json` la rutina no hace nada.
 
