@@ -1,0 +1,17 @@
+{
+  "nombre": "Campamento del Age",
+  "anio": 2026,
+  "desde": "2026-10-09T00:00:00-03:00",
+  "hasta": null,
+  "minimoClan": 2,
+  "clan": {
+    "tag": "[LW]",
+    "miembros": [
+      { "id": 302551, "nick": "DuranDarte" },
+      { "id": 2549243, "nick": "Reckless" },
+      { "id": 2227989, "nick": "Mario" },
+      { "id": 649271, "nick": "MasterGace" },
+      { "id": 1381730, "nick": "Ryuzaki" }
+    ]
+  }
+}

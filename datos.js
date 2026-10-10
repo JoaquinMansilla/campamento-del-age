@@ -1,7 +1,8 @@
-// Acceso a datos compartido por el dashboard y la página de carga.
+// Acceso a datos: las partidas vienen de data/partidas.json (lo genera scripts/sincronizar.mjs),
+// las comidas y actividades de Supabase.
 const MOMENTOS = ['desayuno', 'almuerzo', 'merienda', 'cena'];
 
-const hayBase = () => Boolean(window.CONFIG && CONFIG.supabaseUrl && CONFIG.supabaseAnonKey);
+const hayBase = () => Boolean(window.CONFIG && CONFIG.supabaseUrl && CONFIG.supabaseAnonKey && window.supabase);
 
 let cliente;
 function base() {
@@ -15,29 +16,42 @@ async function consultar(consulta) {
   return data;
 }
 
-// Devuelve { ejemplo, partidas, comidas, actividades } con la misma forma venga de Supabase o del JSON de ejemplo
-async function cargarDatos() {
-  if (!hayBase()) {
-    const res = await fetch('data/ejemplo.json', { cache: 'no-cache' });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    return { ...(await res.json()), ejemplo: true };
-  }
-  const [partidas, comidas, actividades] = await Promise.all([
-    consultar(base().from('partidas').select('*, partida_jugadores(jugador, civ, equipo)').order('fecha').order('id')),
+async function leerJson(ruta) {
+  const res = await fetch(ruta, { cache: 'no-cache' });
+  if (!res.ok) throw new Error(`HTTP ${res.status} al leer ${ruta}`);
+  return res.json();
+}
+
+async function cargarPartidas() {
+  const [campamento, datos] = await Promise.all([leerJson('campamento.json'), leerJson('data/partidas.json')]);
+  const miembros = campamento.clan.miembros.map((m, orden) => ({ ...m, orden }));
+  const porId = new Map(miembros.map((m) => [m.id, m]));
+
+  const partidas = datos.partidas.map((p) => {
+    const clan = p.jugadores.filter((j) => porId.has(j.id)).map((j) => ({ ...j, miembro: porId.get(j.id) }));
+    const equipos = new Set(clan.map((j) => j.equipo));
+    // Si hay miembros del clan en los dos bandos, la partida no cuenta para el récord del clan
+    const resultado = equipos.size > 1 ? 'interna' : clan[0].gano ? 'victoria' : 'derrota';
+    const equipoClan = equipos.size > 1 ? null : clan[0].equipo;
+    return {
+      ...p,
+      inicio: new Date(p.inicio),
+      fin: new Date(p.fin),
+      minutos: (Date.parse(p.fin) - Date.parse(p.inicio)) / 60000,
+      clan,
+      aliados: p.jugadores.filter((j) => !porId.has(j.id) && j.equipo === equipoClan),
+      rivales: p.jugadores.filter((j) => !porId.has(j.id) && j.equipo !== equipoClan),
+      resultado,
+    };
+  });
+  return { campamento, miembros, partidas, actualizado: datos.actualizado ? new Date(datos.actualizado) : null };
+}
+
+async function cargarCampamento() {
+  if (!hayBase()) return { comidas: [], actividades: [] };
+  const [comidas, actividades] = await Promise.all([
     consultar(base().from('comidas').select('*').order('fecha').order('id')),
     consultar(base().from('actividades').select('*').order('fecha').order('id')),
   ]);
-  return {
-    ejemplo: false,
-    partidas: partidas.map((p) => ({
-      id: p.id,
-      fecha: p.fecha,
-      mapa: p.mapa,
-      duracionMin: p.duracion_min,
-      ganador: p.equipo_ganador,
-      jugadores: p.partida_jugadores.map((j) => ({ nombre: j.jugador, civ: j.civ, equipo: j.equipo })),
-    })),
-    comidas,
-    actividades,
-  };
+  return { comidas, actividades };
 }

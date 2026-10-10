@@ -1,0 +1,394 @@
+{
+ "civs": {
+  "0": {
+   "nombre": "Armenios",
+   "img": "https://backend.cdn.aoe2companion.com/public/aoe2/de/civilizations/armenians.png"
+  },
+  "1": {
+   "nombre": "Aztecas",
+   "img": "https://backend.cdn.aoe2companion.com/public/aoe2/de/civilizations/aztecs.png"
+  },
+  "2": {
+   "nombre": "Bengalíes",
+   "img": "https://backend.cdn.aoe2companion.com/public/aoe2/de/civilizations/bengalis.png"
+  },
+  "3": {
+   "nombre": "Bereberes",
+   "img": "https://backend.cdn.aoe2companion.com/public/aoe2/de/civilizations/berbers.png"
+  },
+  "4": {
+   "nombre": "Bohemios",
+   "img": "https://backend.cdn.aoe2companion.com/public/aoe2/de/civilizations/bohemians.png"
+  },
+  "5": {
+   "nombre": "Britanos",
+   "img": "https://backend.cdn.aoe2companion.com/public/aoe2/de/civilizations/britons.png"
+  },
+  "6": {
+   "nombre": "Búlgaros",
+   "img": "https://backend.cdn.aoe2companion.com/public/aoe2/de/civilizations/bulgarians.png"
+  },
+  "7": {
+   "nombre": "Borgoñeses",
+   "img": "https://backend.cdn.aoe2companion.com/public/aoe2/de/civilizations/burgundians.png"
+  },
+  "8": {
+   "nombre": "Birmanos",
+   "img": "https://backend.cdn.aoe2companion.com/public/aoe2/de/civilizations/burmese.png"
+  },
+  "9": {
+   "nombre": "Bizantinos",
+   "img": "https://backend.cdn.aoe2companion.com/public/aoe2/de/civilizations/byzantines.png"
+  },
+  "10": {
+   "nombre": "Celtas",
+   "img": "https://backend.cdn.aoe2companion.com/public/aoe2/de/civilizations/celts.png"
+  },
+  "11": {
+   "nombre": "Chinos",
+   "img": "https://backend.cdn.aoe2companion.com/public/aoe2/de/civilizations/chinese.png"
+  },
+  "12": {
+   "nombre": "Cumanos",
+   "img": "https://backend.cdn.aoe2companion.com/public/aoe2/de/civilizations/cumans.png"
+  },
+  "13": {
+   "nombre": "Dravídicos",
+   "img": "https://backend.cdn.aoe2companion.com/public/aoe2/de/civilizations/dravidians.png"
+  },
+  "14": {
+   "nombre": "Etíopes",
+   "img": "https://backend.cdn.aoe2companion.com/public/aoe2/de/civilizations/ethiopians.png"
+  },
+  "15": {
+   "nombre": "Francos",
+   "img": "https://backend.cdn.aoe2companion.com/public/aoe2/de/civilizations/franks.png"
+  },
+  "16": {
+   "nombre": "Georgianos",
+   "img": "https://backend.cdn.aoe2companion.com/public/aoe2/de/civilizations/georgians.png"
+  },
+  "17": {
+   "nombre": "Godos",
+   "img": "https://backend.cdn.aoe2companion.com/public/aoe2/de/civilizations/goths.png"
+  },
+  "18": {
+   "nombre": "Gurjara",
+   "img": "https://backend.cdn.aoe2companion.com/public/aoe2/de/civilizations/gurjaras.png"
+  },
+  "19": {
+   "nombre": "Hunos",
+   "img": "https://backend.cdn.aoe2companion.com/public/aoe2/de/civilizations/huns.png"
+  },
+  "20": {
+   "nombre": "Inca",
+   "img": "https://backend.cdn.aoe2companion.com/public/aoe2/de/civilizations/incas.png"
+  },
+  "21": {
+   "nombre": "Indostanos",
+   "img": "https://backend.cdn.aoe2companion.com/public/aoe2/de/civilizations/hindustanis.png"
+  },
+  "22": {
+   "nombre": "Italianos",
+   "img": "https://backend.cdn.aoe2companion.com/public/aoe2/de/civilizations/italians.png"
+  },
+  "23": {
+   "nombre": "Japoneses",
+   "img": "https://backend.cdn.aoe2companion.com/public/aoe2/de/civilizations/japanese.png"
+  },
+  "24": {
+   "nombre": "Jemeres",
+   "img": "https://backend.cdn.aoe2companion.com/public/aoe2/de/civilizations/khmer.png"
+  },
+  "25": {
+   "nombre": "Coreanos",
+   "img": "https://backend.cdn.aoe2companion.com/public/aoe2/de/civilizations/koreans.png"
+  },
+  "26": {
+   "nombre": "Lituanos",
+   "img": "https://backend.cdn.aoe2companion.com/public/aoe2/de/civilizations/lithuanians.png"
+  },
+  "27": {
+   "nombre": "Magiares",
+   "img": "https://backend.cdn.aoe2companion.com/public/aoe2/de/civilizations/magyars.png"
+  },
+  "28": {
+   "nombre": "Malayos",
+   "img": "https://backend.cdn.aoe2companion.com/public/aoe2/de/civilizations/malay.png"
+  },
+  "29": {
+   "nombre": "Malíes",
+   "img": "https://backend.cdn.aoe2companion.com/public/aoe2/de/civilizations/malians.png"
+  },
+  "30": {
+   "nombre": "Maya",
+   "img": "https://backend.cdn.aoe2companion.com/public/aoe2/de/civilizations/mayans.png"
+  },
+  "31": {
+   "nombre": "Mongoles",
+   "img": "https://backend.cdn.aoe2companion.com/public/aoe2/de/civilizations/mongols.png"
+  },
+  "32": {
+   "nombre": "Persas",
+   "img": "https://backend.cdn.aoe2companion.com/public/aoe2/de/civilizations/persians.png"
+  },
+  "33": {
+   "nombre": "Polacos",
+   "img": "https://backend.cdn.aoe2companion.com/public/aoe2/de/civilizations/poles.png"
+  },
+  "34": {
+   "nombre": "Portugueses",
+   "img": "https://backend.cdn.aoe2companion.com/public/aoe2/de/civilizations/portuguese.png"
+  },
+  "35": {
+   "nombre": "Romanos",
+   "img": "https://backend.cdn.aoe2companion.com/public/aoe2/de/civilizations/romans.png"
+  },
+  "36": {
+   "nombre": "Sarracenos",
+   "img": "https://backend.cdn.aoe2companion.com/public/aoe2/de/civilizations/saracens.png"
+  },
+  "37": {
+   "nombre": "Sicilianos",
+   "img": "https://backend.cdn.aoe2companion.com/public/aoe2/de/civilizations/sicilians.png"
+  },
+  "38": {
+   "nombre": "Eslavos",
+   "img": "https://backend.cdn.aoe2companion.com/public/aoe2/de/civilizations/slavs.png"
+  },
+  "39": {
+   "nombre": "Españoles",
+   "img": "https://backend.cdn.aoe2companion.com/public/aoe2/de/civilizations/spanish.png"
+  },
+  "40": {
+   "nombre": "Tártaros",
+   "img": "https://backend.cdn.aoe2companion.com/public/aoe2/de/civilizations/tatars.png"
+  },
+  "41": {
+   "nombre": "Teutones",
+   "img": "https://backend.cdn.aoe2companion.com/public/aoe2/de/civilizations/teutons.png"
+  },
+  "42": {
+   "nombre": "Turcos",
+   "img": "https://backend.cdn.aoe2companion.com/public/aoe2/de/civilizations/turks.png"
+  },
+  "43": {
+   "nombre": "Vietnamitas",
+   "img": "https://backend.cdn.aoe2companion.com/public/aoe2/de/civilizations/vietnamese.png"
+  },
+  "44": {
+   "nombre": "Vikingos",
+   "img": "https://backend.cdn.aoe2companion.com/public/aoe2/de/civilizations/vikings.png"
+  },
+  "47": {
+   "nombre": "Espartanos",
+   "img": "https://backend.cdn.aoe2companion.com/public/aoe2/de/civilizations/spartans.png"
+  },
+  "48": {
+   "nombre": "Shu",
+   "img": "https://backend.cdn.aoe2companion.com/public/aoe2/de/civilizations/shu.png"
+  },
+  "49": {
+   "nombre": "Wu",
+   "img": "https://backend.cdn.aoe2companion.com/public/aoe2/de/civilizations/wu.png"
+  },
+  "50": {
+   "nombre": "Wei",
+   "img": "https://backend.cdn.aoe2companion.com/public/aoe2/de/civilizations/wei.png"
+  },
+  "51": {
+   "nombre": "Yurchen",
+   "img": "https://backend.cdn.aoe2companion.com/public/aoe2/de/civilizations/jurchens.png"
+  },
+  "52": {
+   "nombre": "Kitán",
+   "img": "https://backend.cdn.aoe2companion.com/public/aoe2/de/civilizations/khitans.png"
+  },
+  "56": {
+   "nombre": "Tracios",
+   "img": "https://backend.cdn.aoe2companion.com/public/aoe2/de/civilizations/thracians.png"
+  },
+  "58": {
+   "nombre": "Muiscas",
+   "img": "https://backend.cdn.aoe2companion.com/public/aoe2/de/civilizations/muisca.png"
+  },
+  "59": {
+   "nombre": "Mapuches",
+   "img": "https://backend.cdn.aoe2companion.com/public/aoe2/de/civilizations/mapuche.png"
+  },
+  "60": {
+   "nombre": "Tupís",
+   "img": "https://backend.cdn.aoe2companion.com/public/aoe2/de/civilizations/tupi.png"
+  },
+  "61": {
+   "nombre": "Sajones",
+   "img": "https://backend.cdn.aoe2companion.com/public/aoe2/de/civilizations/saxons.png"
+  },
+  "62": {
+   "nombre": "Varegos",
+   "img": "https://backend.cdn.aoe2companion.com/public/aoe2/de/civilizations/varangians.png"
+  },
+  "63": {
+   "nombre": "Daneses",
+   "img": "https://backend.cdn.aoe2companion.com/public/aoe2/de/civilizations/danes.png"
+  }
+ },
+ "mapas": {
+  "10875": {
+   "nombre": "Arabia",
+   "img": "https://backend.cdn.aoe2companion.com/public/aoe2/de/maps/rm_arabia.png"
+  },
+  "10877": {
+   "nombre": "Báltico",
+   "img": "https://backend.cdn.aoe2companion.com/public/aoe2/de/maps/rm_baltic.png"
+  },
+  "10882": {
+   "nombre": "Fortaleza",
+   "img": "https://backend.cdn.aoe2companion.com/public/aoe2/de/maps/rm_fortress.png"
+  },
+  "10884": {
+   "nombre": "Montañas",
+   "img": "https://backend.cdn.aoe2companion.com/public/aoe2/de/maps/rm_highland.png"
+  },
+  "10886": {
+   "nombre": "Mediterráneo",
+   "img": "https://backend.cdn.aoe2companion.com/public/aoe2/de/maps/rm_mediterranean.png"
+  },
+  "10887": {
+   "nombre": "Migración",
+   "img": "https://backend.cdn.aoe2companion.com/public/aoe2/de/maps/rm_migration.png"
+  },
+  "10889": {
+   "nombre": "Islas de equipo",
+   "img": "https://backend.cdn.aoe2companion.com/public/aoe2/de/maps/rm_team-islands.png"
+  },
+  "10891": {
+   "nombre": "Escandinavia",
+   "img": "https://backend.cdn.aoe2companion.com/public/aoe2/de/maps/rm_scandinavia.png"
+  },
+  "10892": {
+   "nombre": "Mongolia",
+   "img": "https://backend.cdn.aoe2companion.com/public/aoe2/de/maps/rm_mongolia.png"
+  },
+  "10894": {
+   "nombre": "Yucatán",
+   "img": "https://backend.cdn.aoe2companion.com/public/aoe2/de/maps/rm_yucatan.png"
+  },
+  "10895": {
+   "nombre": "Arena",
+   "img": "https://backend.cdn.aoe2companion.com/public/aoe2/de/maps/rm_arena.png"
+  },
+  "10901": {
+   "nombre": "Nómada",
+   "img": "https://backend.cdn.aoe2companion.com/public/aoe2/de/maps/rm_nomad.png"
+  },
+  "10919": {
+   "nombre": "Guaridas",
+   "img": "https://backend.cdn.aoe2companion.com/public/aoe2/de/maps/rm_hideout.png"
+  },
+  "10920": {
+   "nombre": "Castros",
+   "img": "https://backend.cdn.aoe2companion.com/public/aoe2/de/maps/rm_hill-fort.png"
+  },
+  "10921": {
+   "nombre": "Lombardía",
+   "img": "https://backend.cdn.aoe2companion.com/public/aoe2/de/maps/rm_lombardia.png"
+  },
+  "10924": {
+   "nombre": "Mega-Aleatorio",
+   "img": "https://backend.cdn.aoe2companion.com/public/aoe2/de/maps/rm_megarandom.png"
+  },
+  "10931": {
+   "nombre": "Cuatro Lagos",
+   "img": "https://backend.cdn.aoe2companion.com/public/aoe2/de/maps/rm_four-lakes.png"
+  },
+  "10932": {
+   "nombre": "Nómada",
+   "img": "https://backend.cdn.aoe2companion.com/public/aoe2/de/maps/rm_land_nomad.png"
+  },
+  "10939": {
+   "nombre": "Bosque costero",
+   "img": "https://backend.cdn.aoe2companion.com/public/aoe2/de/maps/rm_coastal_forest.png"
+  },
+  "10940": {
+   "nombre": "Claro africano",
+   "img": "https://backend.cdn.aoe2companion.com/public/aoe2/de/maps/rm_african_clearing.png"
+  },
+  "10945": {
+   "nombre": "Michi",
+   "img": "https://backend.cdn.aoe2companion.com/public/aoe2/de/maps/rm_michi.png"
+  },
+  "10952": {
+   "nombre": "Tierras bajas",
+   "img": "https://backend.cdn.aoe2companion.com/public/aoe2/de/maps/rm_lowland.png"
+  },
+  "10956": {
+   "nombre": "Islas del Norte",
+   "img": "https://backend.cdn.aoe2companion.com/public/aoe2/de/maps/rm_northern_isles.png"
+  },
+  "10957": {
+   "nombre": "Fortaleza del anillo",
+   "img": "https://backend.cdn.aoe2companion.com/public/aoe2/de/maps/rm_ring_fortress.png"
+  },
+  "10960": {
+   "nombre": "Acotado",
+   "img": "https://backend.cdn.aoe2companion.com/public/aoe2/de/maps/rm_enclosed.png"
+  },
+  "10961": {
+   "nombre": "Tormenta de polvo",
+   "img": "https://backend.cdn.aoe2companion.com/public/aoe2/de/maps/rm_haboob.png"
+  },
+  "10979": {
+   "nombre": "Claro",
+   "img": "https://backend.cdn.aoe2companion.com/public/aoe2/de/maps/rm_glade.png"
+  },
+  "10980": {
+   "nombre": "Claro fortificado",
+   "img": "https://backend.cdn.aoe2companion.com/public/aoe2/de/maps/rm_fortified_clearing.png"
+  },
+  "10992": {
+   "nombre": "Peregrinos",
+   "img": "https://backend.cdn.aoe2companion.com/public/aoe2/de/maps/cm_pilgrims.png"
+  },
+  "10993": {
+   "nombre": "Pradera",
+   "img": "https://backend.cdn.aoe2companion.com/public/aoe2/de/maps/cm_prairie.png"
+  },
+  "10994": {
+   "nombre": "Estaciones",
+   "img": "https://backend.cdn.aoe2companion.com/public/aoe2/de/maps/cm_seasons.png"
+  },
+  "11006": {
+   "nombre": "Arena QS",
+   "img": "https://backend.cdn.aoe2companion.com/public/aoe2/de/maps/rm_qs_arena.png"
+  },
+  "11010": {
+   "nombre": "Acuarena",
+   "img": "https://backend.cdn.aoe2companion.com/public/aoe2/de/maps/rm_aquarena.png"
+  },
+  "11013": {
+   "nombre": "Graupel",
+   "img": "https://backend.cdn.aoe2companion.com/public/aoe2/de/maps/rm_graupel.png"
+  },
+  "11026": {
+   "nombre": "Desierto de Arabia",
+   "img": "https://backend.cdn.aoe2companion.com/public/aoe2/de/maps/rm_arabian_desert.png"
+  },
+  "301104": {
+   "nombre": "Socotra",
+   "img": "https://backend.cdn.aoe2companion.com/public/aoe2/de/maps/rm_socotra.png"
+  },
+  "301112": {
+   "nombre": "La Tierra",
+   "img": "https://backend.cdn.aoe2companion.com/public/aoe2/de/maps/rwm_earth.png"
+  },
+  "301122": {
+   "nombre": "Pozo de serpientes",
+   "img": "https://backend.cdn.aoe2companion.com/public/aoe2/de/maps/sm_snake-pit.png"
+  },
+  "301131": {
+   "nombre": "Islas del Pacífico",
+   "img": "https://backend.cdn.aoe2companion.com/public/aoe2/de/maps/rm_pacific-islands.png"
+  }
+ }
+}

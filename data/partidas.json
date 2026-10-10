@@ -1,0 +1,192 @@
+{
+ "actualizado": "2026-10-10T04:06:44.572Z",
+ "nombres": {
+  "302551": "[Lw] Durandarte",
+  "649271": "[Lw] MasterGace",
+  "1381730": "[Lw] Ryuzaki",
+  "2227989": "[Lw] Mario",
+  "2549243": "[Lw] Reckless"
+ },
+ "partidas": [
+  {
+   "id": 512522487,
+   "inicio": "2026-10-10T01:34:30.000Z",
+   "fin": "2026-10-10T02:17:07.000Z",
+   "modo": "Equipos 4 vs 4",
+   "mapa": "Bosque costero",
+   "mapaImg": "https://backend.cdn.aoe2companion.com/public/aoe2/de/maps/rm_coastal_forest.png",
+   "jugadores": [
+    {
+     "id": 2974915,
+     "nombre": "KRAIKTON",
+     "equipo": 0,
+     "gano": true,
+     "civ": "Romanos",
+     "civImg": "https://backend.cdn.aoe2companion.com/public/aoe2/de/civilizations/romans.png",
+     "rating": 1265,
+     "diff": 16
+    },
+    {
+     "id": 11571385,
+     "nombre": "aariva83",
+     "equipo": 0,
+     "gano": true,
+     "civ": "Mongoles",
+     "civImg": "https://backend.cdn.aoe2companion.com/public/aoe2/de/civilizations/mongols.png",
+     "rating": 1232,
+     "diff": 17
+    },
+    {
+     "id": 18235115,
+     "nombre": "Kierkegaard",
+     "equipo": 0,
+     "gano": true,
+     "civ": "Vikingos",
+     "civImg": "https://backend.cdn.aoe2companion.com/public/aoe2/de/civilizations/vikings.png",
+     "rating": 1277,
+     "diff": 15
+    },
+    {
+     "id": 19871879,
+     "nombre": "Sunny",
+     "equipo": 0,
+     "gano": true,
+     "civ": "Bohemios",
+     "civImg": "https://backend.cdn.aoe2companion.com/public/aoe2/de/civilizations/bohemians.png",
+     "rating": 1291,
+     "diff": 15
+    },
+    {
+     "id": 2227989,
+     "nombre": "[Lw] Mario",
+     "equipo": 1,
+     "gano": false,
+     "civ": "Mongoles",
+     "civImg": "https://backend.cdn.aoe2companion.com/public/aoe2/de/civilizations/mongols.png",
+     "rating": 1281,
+     "diff": -18
+    },
+    {
+     "id": 649271,
+     "nombre": "[Lw] MasterGace",
+     "equipo": 1,
+     "gano": false,
+     "civ": "Maya",
+     "civImg": "https://backend.cdn.aoe2companion.com/public/aoe2/de/civilizations/mayans.png",
+     "rating": 1214,
+     "diff": -15
+    },
+    {
+     "id": 1381730,
+     "nombre": "[Lw] Ryuzaki",
+     "equipo": 1,
+     "gano": false,
+     "civ": "Magiares",
+     "civImg": "https://backend.cdn.aoe2companion.com/public/aoe2/de/civilizations/magyars.png",
+     "rating": 1222,
+     "diff": -15
+    },
+    {
+     "id": 302551,
+     "nombre": "[Lw] Durandarte",
+     "equipo": 1,
+     "gano": false,
+     "civ": "Bizantinos",
+     "civImg": "https://backend.cdn.aoe2companion.com/public/aoe2/de/civilizations/byzantines.png",
+     "rating": 1201,
+     "diff": -15
+    }
+   ]
+  },
+  {
+   "id": 512543194,
+   "inicio": "2026-10-10T03:28:37.000Z",
+   "fin": "2026-10-10T03:55:29.000Z",
+   "modo": "Equipos 4 vs 4",
+   "mapa": "Báltico",
+   "mapaImg": "https://backend.cdn.aoe2companion.com/public/aoe2/de/maps/rm_baltic.png",
+   "jugadores": [
+    {
+     "id": 4512278,
+     "nombre": "46631201",
+     "equipo": 0,
+     "gano": false,
+     "civ": "Vikingos",
+     "civImg": "https://backend.cdn.aoe2companion.com/public/aoe2/de/civilizations/vikings.png",
+     "rating": 1264,
+     "diff": -17
+    },
+    {
+     "id": 2997078,
+     "nombre": "Heda",
+     "equipo": 0,
+     "gano": false,
+     "civ": "Magiares",
+     "civImg": "https://backend.cdn.aoe2companion.com/public/aoe2/de/civilizations/magyars.png",
+     "rating": 1262,
+     "diff": -17
+    },
+    {
+     "id": 11504723,
+     "nombre": "De_Aztek",
+     "equipo": 0,
+     "gano": false,
+     "civ": "Wu",
+     "civImg": "https://backend.cdn.aoe2companion.com/public/aoe2/de/civilizations/wu.png",
+     "rating": 1284,
+     "diff": -18
+    },
+    {
+     "id": 23703804,
+     "nombre": "Bin",
+     "equipo": 0,
+     "gano": false,
+     "civ": "Hunos",
+     "civImg": "https://backend.cdn.aoe2companion.com/public/aoe2/de/civilizations/huns.png",
+     "rating": 1252,
+     "diff": -17
+    },
+    {
+     "id": 2227989,
+     "nombre": "[Lw] Mario",
+     "equipo": 1,
+     "gano": true,
+     "civ": "Vikingos",
+     "civImg": "https://backend.cdn.aoe2companion.com/public/aoe2/de/civilizations/vikings.png",
+     "rating": 1297,
+     "diff": 16
+    },
+    {
+     "id": 302551,
+     "nombre": "[Lw] Durandarte",
+     "equipo": 1,
+     "gano": true,
+     "civ": "Italianos",
+     "civImg": "https://backend.cdn.aoe2companion.com/public/aoe2/de/civilizations/italians.png",
+     "rating": 1220,
+     "diff": 19
+    },
+    {
+     "id": 1381730,
+     "nombre": "[Lw] Ryuzaki",
+     "equipo": 1,
+     "gano": true,
+     "civ": "Persas",
+     "civImg": "https://backend.cdn.aoe2companion.com/public/aoe2/de/civilizations/persians.png",
+     "rating": 1241,
+     "diff": 19
+    },
+    {
+     "id": 2549243,
+     "nombre": "[Lw] Reckless",
+     "equipo": 1,
+     "gano": true,
+     "civ": "Lituanos",
+     "civImg": "https://backend.cdn.aoe2companion.com/public/aoe2/de/civilizations/lithuanians.png",
+     "rating": 1325,
+     "diff": 15
+    }
+   ]
+  }
+ ]
+}

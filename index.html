@@ -3,91 +3,138 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Campamento del Age</title>
-  <meta name="description" content="Estadísticas de las partidas de Age of Empires del Campamento del Age.">
+  <title>Campamento del Age 2026</title>
+  <meta name="description" content="Crónica del Campamento del Age 2026: partidas de Age of Empires II, comidas y actividades del clan [LW].">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="estilos.css">
 </head>
 <body>
   <main class="pagina">
-    <header class="encabezado">
-      <p class="sobretitulo">Age of Empires</p>
-      <h1 id="titulo">Campamento del Age</h1>
-      <p class="bajada" id="bajada">Cargando partidas…</p>
+    <header class="estandarte">
+      <p class="sobretitulo">Age of Empires II · Clan <span id="tag">[LW]</span></p>
+      <h1><span id="titulo">Campamento del Age</span> <span class="anio" id="anio">2026</span></h1>
+      <div class="filete" aria-hidden="true"><span>⚔</span></div>
+      <p class="bajada" id="bajada">Reuniendo a los aldeanos…</p>
     </header>
 
-    <p class="aviso" id="aviso-ejemplo" hidden>
-      Estos son <strong>datos de ejemplo</strong>: todavía no hay una base de datos conectada.
-      Completá <code>config.js</code> con los datos de Supabase para ver los reales.
-    </p>
-    <p class="aviso error" id="aviso-error" hidden></p>
+    <p class="aviso" id="aviso-error" hidden></p>
 
-    <section class="fichas" id="fichas" aria-label="Resumen" data-partidas></section>
+    <section class="marcador" id="marcador" data-partidas aria-label="Resultado del clan"></section>
 
-    <section class="tarjeta" data-partidas>
-      <h2>Tabla de posiciones</h2>
-      <p class="nota">Ordenada por porcentaje de victorias; a igualdad, por partidas ganadas.</p>
-      <div class="tabla-scroll">
-        <table id="tabla-posiciones"></table>
-      </div>
+    <section class="panel" data-partidas>
+      <h2>Los guerreros</h2>
+      <p class="nota">Rendimiento de cada miembro del clan en las partidas del campamento.</p>
+      <div class="guerreros" id="guerreros"></div>
     </section>
 
-    <section class="tarjeta" data-partidas>
-      <h2>Victorias acumuladas</h2>
-      <p class="nota">Cuántas partidas llevaba ganadas cada jugador después de cada partida.</p>
-      <div class="leyenda" id="leyenda-evolucion"></div>
-      <div class="grafico-linea" id="grafico-evolucion"></div>
+    <section class="panel" data-partidas>
+      <h2>La campaña, partida a partida</h2>
+      <p class="nota">Puntos de ELO ganados o perdidos por cada uno desde que empezó el campamento.</p>
+      <div class="leyenda" id="leyenda-elo"></div>
+      <div class="grafico-linea" id="grafico-elo"></div>
     </section>
 
     <div class="dos-columnas" data-partidas>
-      <section class="tarjeta">
-        <h2>Civilizaciones más elegidas</h2>
-        <p class="nota">Veces elegida y porcentaje de victorias con esa civilización.</p>
+      <section class="panel">
+        <h2>Civilizaciones</h2>
+        <p class="nota">Veces que el clan eligió cada una y cómo le fue.</p>
         <div class="barras" id="barras-civs"></div>
       </section>
-      <section class="tarjeta">
-        <h2>Mapas más jugados</h2>
-        <p class="nota">Partidas jugadas y duración promedio en cada mapa.</p>
+      <section class="panel">
+        <h2>Mapas</h2>
+        <p class="nota">Partidas jugadas en cada mapa y resultado del clan.</p>
         <div class="barras" id="barras-mapas"></div>
       </section>
     </div>
 
-    <section class="tarjeta" data-partidas>
-      <h2>Historial de partidas</h2>
-      <div class="tabla-scroll">
-        <table id="tabla-historial"></table>
-      </div>
+    <section class="panel" data-partidas>
+      <h2>Crónica de batallas</h2>
+      <p class="nota" id="nota-cronica"></p>
+      <div class="batallas" id="batallas"></div>
     </section>
 
     <div class="dos-columnas">
-      <section class="tarjeta">
-        <h2>Comidas</h2>
+      <section class="panel">
+        <h2>El banquete</h2>
         <p class="nota">Qué se comió y quién cocinó.</p>
-        <div class="tabla-scroll">
-          <table id="tabla-comidas"></table>
-        </div>
+        <form class="carga" id="form-comida" hidden>
+          <div class="carga-fila">
+            <input name="plato" placeholder="¿Qué se comió?" list="lista-platos" required aria-label="Plato">
+            <select name="momento" aria-label="Momento">
+              <option value="desayuno">Desayuno</option>
+              <option value="almuerzo">Almuerzo</option>
+              <option value="merienda">Merienda</option>
+              <option value="cena">Cena</option>
+            </select>
+            <input type="date" name="fecha" required aria-label="Fecha">
+          </div>
+          <div class="chips" data-chips aria-label="Quién cocinó"></div>
+          <div class="carga-fila">
+            <button class="boton">Agregar comida</button>
+            <span class="mensaje" data-mensaje></span>
+          </div>
+        </form>
+        <ul class="lista" id="lista-comidas"></ul>
       </section>
-      <section class="tarjeta">
-        <h2>Quién cocinó más</h2>
-        <p class="nota">Cantidad de comidas en las que cocinó cada uno.</p>
-        <div class="barras" id="barras-cocineros"></div>
+
+      <section class="panel">
+        <h2>Fuera del campo de batalla</h2>
+        <p class="nota">Lo que se hizo además de jugar al Age.</p>
+        <form class="carga" id="form-actividad" hidden>
+          <div class="carga-fila">
+            <input name="nombre" placeholder="¿Qué hicieron?" list="lista-actividades-sugeridas" required aria-label="Actividad">
+            <input type="date" name="fecha" required aria-label="Fecha">
+          </div>
+          <div class="chips" data-chips aria-label="Quiénes participaron"></div>
+          <div class="carga-fila">
+            <button class="boton">Agregar actividad</button>
+            <span class="mensaje" data-mensaje></span>
+          </div>
+        </form>
+        <ul class="lista" id="lista-actividades"></ul>
       </section>
     </div>
 
-    <section class="tarjeta">
-      <h2>Actividades</h2>
-      <p class="nota">Todo lo que se hizo además de jugar al Age.</p>
-      <div class="tabla-scroll">
-        <table id="tabla-actividades"></table>
+    <section class="panel acceso" id="acceso">
+      <div id="acceso-cerrado">
+        <button class="boton secundario" id="abrir-login">Ingresar para cargar comidas y actividades</button>
+        <form class="carga" id="form-login" hidden>
+          <div class="carga-fila">
+            <input type="email" name="email" placeholder="Email" required autocomplete="username" aria-label="Email">
+            <input type="password" name="clave" placeholder="Contraseña" required autocomplete="current-password" aria-label="Contraseña">
+            <button class="boton">Ingresar</button>
+          </div>
+          <span class="mensaje mal" id="msj-login"></span>
+        </form>
+      </div>
+      <div id="acceso-abierto" hidden>
+        <span id="sesion"></span>
+        <button class="boton secundario chico" id="salir">Cerrar sesión</button>
       </div>
     </section>
 
-    <footer class="pie">Hecho para el Campamento del Age · Wololo · <a href="cargar.html">Cargar datos</a></footer>
+    <footer class="pie">
+      <span id="actualizado"></span>
+      <span>Las partidas se cargan solas desde los servidores del juego.</span>
+    </footer>
   </main>
+
+  <datalist id="lista-platos">
+    <option value="Asado"><option value="Pizza"><option value="Empanadas"><option value="Hamburguesas">
+    <option value="Milanesas"><option value="Fideos"><option value="Choripanes"><option value="Facturas">
+  </datalist>
+  <datalist id="lista-actividades-sugeridas">
+    <option value="Fútbol"><option value="Truco"><option value="Fogón"><option value="Pileta">
+    <option value="Caminata"><option value="Juegos de mesa"><option value="Película">
+  </datalist>
 
   <div class="tooltip" id="tooltip" hidden></div>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
   <script src="config.js"></script>
   <script src="datos.js"></script>
   <script src="app.js"></script>
+  <script src="carga.js"></script>
 </body>
 </html>
