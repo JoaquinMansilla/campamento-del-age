@@ -22,7 +22,9 @@ flock -n 9 || exit 0
 EN_FECHA=$(node -e '
   const c = require("./campamento.json");
   const ahora = Date.now();
-  console.log(ahora >= Date.parse(c.desde) && (!c.hasta || ahora <= Date.parse(c.hasta)) ? "si" : "no");
+  // Sigue unas horas después del cierre para terminar la última partida y su crónica
+  const gracia = 6 * 60 * 60 * 1000;
+  console.log(ahora >= Date.parse(c.desde) && (!c.hasta || ahora <= Date.parse(c.hasta) + gracia) ? "si" : "no");
 ')
 [ "$EN_FECHA" = "si" ] || exit 0
 

@@ -2,7 +2,7 @@
   "nombre": "Campamento del Age",
   "anio": 2026,
   "desde": "2026-10-09T00:00:00-03:00",
-  "hasta": null,
+  "hasta": "2026-10-12T23:59:59-03:00",
   "minimoClan": 2,
   "clan": {
     "nombre": "LW",
