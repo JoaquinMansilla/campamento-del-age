@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="estilos.css?v=6">
+  <link rel="stylesheet" href="estilos.css?v=7">
 </head>
 <body>
   <main class="pagina">
@@ -48,6 +48,19 @@
         <div class="barras" id="barras-mapas"></div>
       </section>
     </div>
+
+    <section class="panel" data-partidas aria-labelledby="titulo-historia">
+      <h2 id="titulo-historia">Las leyendas del campamento</h2>
+      <p class="nota">Rivalidades, rachas y rankings de todas las partidas. Los indicadores lúdicos explican sus criterios y la cantidad de datos disponibles.</p>
+      <div id="historia-campamento"></div>
+      <details class="historia-grupo">
+        <summary>La Profecía del Oráculo <span>Antes de jugar</span></summary>
+        <p class="nota">Elegí dos equipos y consultá su probabilidad según el ELO del campamento. Todos empiezan en 1000; se compara el promedio de cada equipo. No considera mapa, civilización ni ventaja numérica.</p>
+        <div class="oraculo-equipos" id="oraculo-equipos"></div>
+        <p id="oraculo-resultado" role="status"></p>
+      </details>
+      <details class="historia-grupo cobertura"><summary>Disponibilidad de las funciones por partida</summary><p id="cobertura-funciones"></p></details>
+    </section>
 
     <section class="panel" data-partidas>
       <h2>Crónica de batallas</h2>
@@ -132,8 +145,10 @@
   <div class="tooltip" id="tooltip" hidden></div>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
   <script src="config.js?v=6"></script>
-  <script src="datos.js?v=6"></script>
-  <script src="app.js?v=6"></script>
+  <script src="datos.js?v=7"></script>
+  <script src="campamento.js?v=7"></script>
+  <script src="campamento-ui.js?v=7"></script>
+  <script src="app.js?v=7"></script>
   <script src="carga.js?v=6"></script>
 </body>
 </html>

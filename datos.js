@@ -22,18 +22,28 @@ async function leerJson(ruta) {
   return res.json();
 }
 
+async function leerTodasLasPartidas() {
+  const filas = [];
+  const tamano = 1000;
+  for (let desde = 0; ; desde += tamano) {
+    const pagina = await consultar(base().from('partidas').select('id, datos, detalle, cronica').order('inicio').order('id').range(desde, desde + tamano - 1));
+    filas.push(...pagina);
+    if (pagina.length < tamano) return filas;
+  }
+}
+
 async function cargarPartidas() {
   if (!hayBase()) throw new Error('falta configurar Supabase en config.js');
   const [campamento, filas] = await Promise.all([
     leerJson('campamento.json'),
-    consultar(base().from('partidas').select('datos, detalle, cronica').order('inicio')),
+    leerTodasLasPartidas(),
   ]);
   const miembros = campamento.clan.miembros.map((m, orden) => ({ ...m, orden }));
   const porId = new Map(miembros.map((m) => [m.id, m]));
 
-  const partidas = filas.map(({ datos, detalle, cronica }) => {
+  const partidas = filas.filter(f => f.datos?.jugadores?.length && f.datos.jugadores.some(j => porId.has(j.id))).map(({ id, datos, detalle, cronica }) => {
     // El detalle (APM, edades, producción) sale de la grabación y puede no estar todavía
-    const p = { ...datos, jugadores: datos.jugadores.map((j) => ({ ...j, detalle: detalle?.jugadores?.[j.id] || null })) };
+    const p = { ...datos, id: id ?? datos.id, jugadores: datos.jugadores.map((j) => ({ ...j, detalle: detalle?.jugadores?.[j.id] || null })) };
     const clan = p.jugadores.filter((j) => porId.has(j.id)).map((j) => ({ ...j, miembro: porId.get(j.id) }));
     const equipos = new Set(clan.map((j) => j.equipo));
     // Si hay miembros del clan en los dos bandos, la partida no cuenta para el récord del clan
@@ -49,6 +59,7 @@ async function cargarPartidas() {
       rivales: p.jugadores.filter((j) => !porId.has(j.id) && j.equipo !== equipoClan),
       resultado,
       tieneDetalle: Boolean(detalle),
+      segundosDeJuego: detalle?.segundosDeJuego ?? null,
       cronica,
       chat: detalle?.chat || [],
     };

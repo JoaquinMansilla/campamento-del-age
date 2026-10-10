@@ -193,7 +193,7 @@ function pintarBarras(id, items, valorTexto, tooltip) {
 
 // APM de cada jugador en cada partida. Los huecos son partidas que no jugó o sin grabación.
 function pintarApm(partidas, st) {
-  const series = st.guerreros.filter((s) => s.detalles.length).sort((a, b) => a.miembro.orden - b.miembro.orden);
+  const series = st.guerreros.filter((s) => s.detalles.some((d) => Number.isFinite(d.eapm))).sort((a, b) => a.miembro.orden - b.miembro.orden);
   $('panel-apm').hidden = !series.length;
   if (!series.length) return;
   $('leyenda-apm').innerHTML = series
@@ -205,7 +205,7 @@ function pintarApm(partidas, st) {
   const H = Math.min(320, Math.max(220, W * 0.4));
   const m = { arriba: 14, der: 18, abajo: 34, izq: 36 };
   const paso = [10, 20, 25, 50, 100].find((p) => Math.max(...series.flatMap((s) => s.serie.filter((v) => v != null))) / p <= 5) || 200;
-  const maxY = Math.ceil(Math.max(...series.flatMap((s) => s.serie.filter((v) => v != null))) / paso) * paso;
+  const maxY = Math.max(paso, Math.ceil(Math.max(...series.flatMap((s) => s.serie.filter((v) => v != null))) / paso) * paso);
   const x = (i) => (n === 1 ? (m.izq + W - m.der) / 2 : m.izq + (i / (n - 1)) * (W - m.izq - m.der));
   const y = (v) => H - m.abajo - (v / maxY) * (H - m.arriba - m.abajo);
 
@@ -269,12 +269,6 @@ function pintarBatallas(partidas) {
       <td class="num">${numero(d.edificios)}</td>
     </tr>`;
   };
-  const cronica = (p) => (p.cronica ? `<div class="cronica">
-      <h3>${esc(p.cronica.titulo)}</h3>
-      <p>${esc(p.cronica.relato)}</p>
-      ${p.cronica.destacados?.length ? `<ul>${p.cronica.destacados.map((d) => `<li>${esc(d)}</li>`).join('')}</ul>` : ''}
-      ${p.cronica.frase?.texto ? `<blockquote>«${esc(p.cronica.frase.texto)}» <cite>${esc(p.cronica.frase.jugador)}</cite></blockquote>` : ''}
-    </div>` : '');
   const chat = (p) => {
     if (!p.chat.length) return '';
     const quien = new Map(p.jugadores.map((j) => [j.id, j]));
@@ -300,7 +294,6 @@ function pintarBatallas(partidas) {
           <div class="batalla-meta">Partida ${partidas.length - i} · ${esc(p.modo)} · ${esc(fechaLarga(p.inicio))}, ${hora(p.inicio)} · ${duracion(p.minutos)}</div>
         </div>
       </div>
-      ${cronica(p)}
       <div class="tabla-scroll">
         <table class="batalla-tabla">
           <thead><tr>
@@ -313,6 +306,7 @@ function pintarBatallas(partidas) {
           </tbody>
         </table>
       </div>
+      ${CampamentoUI.partida(p)}
       ${chat(p)}
       ${p.tieneDetalle ? '' : '<p class="batalla-meta">La grabación de esta partida todavía no está procesada.</p>'}
     </article>`).join('');
@@ -363,6 +357,7 @@ async function iniciar() {
       <div class="tooltip-fila"><span>Victorias</span><b>${mp.g}</b></div>
       <div class="tooltip-fila"><span>Derrotas</span><b>${mp.p}</b></div>`);
   pintarApm(partidas, st);
+  CampamentoUI.iniciar(partidas, miembros);
   pintarBatallas(partidas);
 
   let pendiente;

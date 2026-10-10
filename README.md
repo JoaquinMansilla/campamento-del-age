@@ -60,3 +60,54 @@ python3 -m http.server 8000
 ```
 
 y abrir <http://localhost:8000>.
+
+## Leyendas del campamento y funciones por partida
+
+La sección **Las leyendas del campamento** reúne 18 funciones históricas, sin sorteo:
+rankings, ELO, cotización ficticia, rivalidades, duplas, noticiero diario y el Oráculo
+para armar dos equipos antes de jugar. Se carga todo el historial paginando Supabase.
+
+Cada batalla muestra **exactamente tres funciones** sorteadas entre las 22 categorías
+por partida que tengan datos suficientes. No hay repetidas en una misma selección.
+La selección se mantiene al redimensionar la página y cambia al recargar o usar
+**Otras tres**. Los relatos locales permiten mostrar tres incluso sin grabación;
+están identificados como ficción. La crónica participa del sorteo, no se agrega
+como una cuarta función.
+
+Las 40 categorías tienen implementación y pruebas de sus cálculos; **12 necesitan
+telemetría adicional que este repositorio todavía no obtiene automáticamente**.
+No se sustituye una baja por una orden de producción ni un dato ausente por cero.
+Las categorías sin evidencia quedan fuera del sorteo, o explican su disponibilidad
+en la sección histórica. [Criterios, matriz de las 40 funciones y formato de datos](docs/funciones.md).
+
+La rutina existente incorpora dos cambios al instalar esta rama en la PC que la ejecuta:
+
+- `grabaciones.py`, versión 3, reprocesa los últimos cuatro días e incorpora mayor
+  intervalo sin órdenes y primera orden militar. Una lectura interrumpida no habilita
+  esos indicadores. Las versiones anteriores siguen siendo compatibles.
+- `cronicas.py`, versión 2, genera ocho narrativas por partida y actualiza crónicas
+  anteriores en lotes de tres. Requiere la sesión de Claude y el `SYNC_TOKEN` habituales.
+  Hasta entonces se conservan las crónicas existentes y se usan relatos locales para
+  las otras variantes. No se llama a una IA desde el navegador.
+
+No se necesita migración SQL ni nuevas claves en la web. El código no ejecuta la
+sincronización, no modifica Supabase ni despliega GitHub Pages por abrir la página.
+
+### Comprobaciones
+
+```sh
+node --test tests/campamento.test.cjs
+python -m unittest discover -s tests -p 'test_*.py' -v
+```
+
+Las pruebas Python requieren las dependencias de `requirements.txt`. Para las pruebas
+opcionales de navegador, instalar Playwright fuera del sitio y ejecutar:
+
+```sh
+node tests/interfaz.cjs
+```
+
+Iniciar antes el servidor local en el puerto 8765; `TEST_URL` permite cambiarlo.
+`PLAYWRIGHT_MODULE` permite usar una instalación de Playwright existente, y
+`PLAYWRIGHT_CHANNEL=msedge` utiliza Edge. Los escenarios de navegador usan datos de
+prueba interceptados, nunca escriben en Supabase.

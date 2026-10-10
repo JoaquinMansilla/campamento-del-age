@@ -371,3 +371,29 @@ input:focus-visible, select:focus-visible, button:focus-visible { outline: 2px s
 @media (max-width: 640px) {
   .panel, .marcador { padding: 16px; }
 }
+
+/* Leyendas históricas y tres funciones por batalla */
+.historia-grupo { border-top: 1px solid var(--grilla); padding: 14px 0; }
+.historia-grupo > summary { cursor: pointer; color: var(--oro); font-weight: 600; }
+.historia-grupo > summary span { color: var(--tinta-2); font-size: 12px; font-weight: 400; margin-left: 8px; }
+.historia-grupo > summary:focus-visible, .funcion summary:focus-visible { outline: 2px solid var(--oro); outline-offset: 4px; }
+.funciones-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.historia-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 14px; }
+.funcion { min-width: 0; padding: 14px; background: linear-gradient(135deg, #382817, #211810); border: 1px solid var(--oro-oscuro); border-radius: 6px; overflow-wrap: anywhere; }
+.funcion h4 { margin: 5px 0 10px; font-family: var(--titulos); color: var(--oro); font-size: 15px; }
+.funcion p { white-space: pre-line; margin: 8px 0; font-size: 14px; }
+.funcion-tipo { font-size: 11px; letter-spacing: .05em; text-transform: uppercase; color: var(--tinta-2); }
+.funcion-metodo { margin-top: 12px; color: var(--tinta-2); font-size: 12px; }
+.funcion-metodo p { font-size: 12px; }
+.funcion summary { cursor: pointer; color: var(--oro); }
+.funcion-pendiente { border-style: dashed; border-color: var(--eje); background: transparent; color: var(--tinta-2); }
+.funciones-cabecera { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin: 4px 0 12px; }
+.funciones-cabecera h3 { margin: 0; font-family: var(--titulos); font-size: 16px; color: var(--oro); }
+.funciones-cabecera p { margin: 4px 0 0; font-size: 12px; color: var(--tinta-2); }
+.funciones-cabecera button { flex-shrink: 0; }
+.oraculo-equipos { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 12px; }
+.oraculo-equipos label { display: grid; gap: 5px; flex: 1 1 130px; font-size: 13px; }
+#oraculo-resultado { color: var(--oro); }
+.cobertura p { font-size: 13px; color: var(--tinta-2); }
+@media (max-width: 800px) { .funciones-grid { grid-template-columns: 1fr; } }
+@media (max-width: 480px) { .funciones-cabecera { align-items: flex-start; flex-direction: column; } }

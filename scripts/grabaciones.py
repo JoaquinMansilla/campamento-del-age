@@ -27,7 +27,7 @@ from mgz.fast import Operation
 RAIZ = pathlib.Path(__file__).resolve().parent.parent
 CABECERAS = {'User-Agent': 'campamento-del-age (https://github.com/JoaquinMansilla/campamento-del-age)'}
 # Si cambia lo que se extrae, subir la versión hace que se reprocesen las partidas recientes
-VERSION = 2
+VERSION = 3
 DIAS_DE_REINTENTO = 4
 # Tecnología de cada edad y segundos que tarda en investigarse (respaldo si falta el aviso del juego)
 EDADES = {101: ('feudal', 130), 102: ('castillos', 160), 103: ('imperial', 190)}
@@ -88,6 +88,10 @@ def leer(grabacion, perfiles):
     por_clic = collections.defaultdict(dict)
     extras = collections.defaultdict(dict)
     chat = []
+    ultima_accion = collections.defaultdict(int)
+    pausas = collections.defaultdict(int)
+    primera_tropa = {}
+    completa = True
     try:
         while flujo.tell() < len(grabacion):
             operacion, carga = fast.operation(flujo)
@@ -116,13 +120,17 @@ def leer(grabacion, perfiles):
                 if jugador is None:
                     continue
                 s = stats[jugador]
+                if 'rendicion' not in extras[jugador]:
+                    pausas[jugador] = max(pausas[jugador], ms - ultima_accion[jugador])
+                    ultima_accion[jugador] = ms
                 s['acciones'] += 1
                 if accion.name == 'DE_QUEUE':
                     unidad = d.get('unit_id')
                     if unidad in ALDEANOS:
                         s['aldeanos'] += d.get('amount', 1)
-                    elif unidad not in CIVILES:
+                    elif unidad is not None and unidad not in CIVILES:
                         s['tropas'] += d.get('amount', 1)
+                        primera_tropa.setdefault(jugador, round(ms / 1000))
                 elif accion.name == 'BUILD':
                     s['edificios'] += 1
                     if d.get('building_id') in EDIFICIOS:
@@ -139,6 +147,7 @@ def leer(grabacion, perfiles):
                     else:
                         s['tecnologias'] += 1
     except Exception as err:  # una grabación cortada igual sirve hasta donde se pudo leer
+        completa = False
         print(f'  lectura interrumpida: {err}')
 
     minutos = ms / 60000
@@ -150,6 +159,13 @@ def leer(grabacion, perfiles):
         s = stats[numero]
         jugadores[str(perfil)] = {
             'eapm': round(s['acciones'] / minutos),
+            'completa': completa,
+            **({
+                'accionesVersion': VERSION,
+                'primeraTropa': primera_tropa.get(numero),
+                'inactividadMaxima': round(max(pausas[numero],
+                    max(0, extras[numero].get('rendicion', ms / 1000) * 1000 - ultima_accion[numero])) / 1000),
+            } if completa else {}),
             **{campo: s[campo] for campo in ('aldeanos', 'tropas', 'edificios', 'tecnologias', 'fortalezas', 'centrosUrbanos', 'maravillas', 'comercio')},
             **por_clic[numero],
             **extras[numero],
@@ -178,7 +194,7 @@ def analizar(grabaciones, perfiles):
 
 
 def main():
-    config = (RAIZ / 'config.js').read_text()
+    config = (RAIZ / 'config.js').read_text(encoding='utf-8')
     url = re.search(r"supabaseUrl:\s*'([^']+)'", config).group(1)
     anon = re.search(r"supabaseAnonKey:\s*'([^']+)'", config).group(1)
     supabase = {'apikey': anon, 'Authorization': f'Bearer {anon}', 'Content-Type': 'application/json'}
@@ -186,7 +202,7 @@ def main():
 
     desde = (datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=DIAS_DE_REINTENTO)).strftime('%Y-%m-%dT%H:%M:%SZ')
     filtro = urllib.parse.urlencode({
-        'select': 'id,datos',
+        'select': 'id,datos,detalle',
         'inicio': f'gte.{desde}',
         'or': f'(detalle.is.null,detalle->>version.is.null,detalle->>version.neq.{VERSION})',
         'order': 'inicio.desc',
@@ -201,6 +217,12 @@ def main():
             print(f"{fila['id']}: sin grabación utilizable ({len(grabaciones)} bajadas)")
             continue
         print(f"{fila['id']}: {detalle['grabaciones']} grabaciones, {len(detalle.get('jugadores', {}))} jugadores, {len(detalle['chat'])} mensajes")
+        # Mantiene métricas verificadas importadas aunque cambie la versión del lector de órdenes.
+        for perfil, anterior in (fila.get('detalle') or {}).get('jugadores', {}).items():
+            if 'telemetria' in anterior:
+                actual = detalle.setdefault('jugadores', {}).setdefault(perfil, {})
+                actual['telemetria'] = anterior['telemetria']
+                actual['fuenteTelemetria'] = anterior.get('fuenteTelemetria', '')
         if token:
             pedir(f'{url}/rest/v1/rpc/guardar_detalle', {'p_token': token, 'p_id': fila['id'], 'p_detalle': detalle}, supabase)
         else:
@@ -208,4 +230,5 @@ def main():
     print(f'{len(pendientes)} partidas pendientes de detalle revisadas.')
 
 
-main()
+if __name__ == '__main__':
+    main()
