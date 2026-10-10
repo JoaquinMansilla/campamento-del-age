@@ -275,8 +275,8 @@ function pintarBatallas(partidas) {
   const cronica = (p) => (p.cronica ? `<div class="cronica">
       <h3>${esc(p.cronica.titulo)}</h3>
       <p>${esc(p.cronica.relato)}</p>
+      ${p.cronica.definicion ? `<h4>Lo que definió la partida</h4><p>${esc(p.cronica.definicion)}</p>` : ''}
       ${p.cronica.destacados?.length ? `<ul>${p.cronica.destacados.map((d) => `<li>${esc(d)}</li>`).join('')}</ul>` : ''}
-      ${p.cronica.frase?.texto ? `<blockquote>«${esc(p.cronica.frase.texto)}» <cite>${esc(p.cronica.frase.jugador)}</cite></blockquote>` : ''}
       ${p.cronica.perlitas?.length ? `<h4>Perlitas</h4><dl class="perlitas">${p.cronica.perlitas.map((x) => {
         const j = p.clan.find((c) => c.miembro.nick === x.jugador);
         return `<div><dt>${j ? `<span class="punto" style="background:${colorDe(j.miembro)}"></span>` : ''}${esc(x.jugador)}</dt><dd>${esc(x.texto)}</dd></div>`;
@@ -291,7 +291,7 @@ function pintarBatallas(partidas) {
       <ol>${p.chat.map((m) => {
         const miembro = delClan.get(m.jugador);
         return `<li><span class="chat-hora">${reloj(m.t)}</span>
-          <span class="chat-quien">${miembro ? `<span class="punto" style="background:${colorDe(miembro)}"></span>` : ''}${esc(miembro ? miembro.nick : quien.get(m.jugador)?.nombre || '?')}${m.canal === 'equipo' ? ' <span class="chat-canal">equipo</span>' : ''}</span>
+          <span class="chat-quien">${miembro ? `<span class="punto" style="background:${colorDe(miembro)}"></span>` : ''}${esc(miembro ? miembro.nick : quien.get(m.jugador)?.nombre || '?')}${m.canal === 'equipo' ? ' <span class="chat-canal">a su equipo</span>' : ''}</span>
           <span class="chat-texto">${esc(m.texto)}</span></li>`;
       }).join('')}</ol>
     </details>`;

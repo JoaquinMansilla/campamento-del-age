@@ -14,6 +14,7 @@ import json
 import os
 import pathlib
 import re
+import statistics
 import struct
 import urllib.error
 import urllib.parse
@@ -28,7 +29,7 @@ from mgz.fast import Operation
 RAIZ = pathlib.Path(__file__).resolve().parent.parent
 CABECERAS = {'User-Agent': 'campamento-del-age (https://github.com/JoaquinMansilla/campamento-del-age)'}
 # Si cambia lo que se extrae, subir la versión hace que se reprocesen las partidas recientes
-VERSION = 3
+VERSION = 4
 DIAS_DE_REINTENTO = 4
 # Tecnología de cada edad y segundos que tarda en investigarse (respaldo si falta el aviso del juego)
 EDADES = {101: ('feudal', 130), 102: ('castillos', 160), 103: ('imperial', 190)}
@@ -40,6 +41,13 @@ CIVILES = {13, 17, 128, 545}
 EDIFICIOS = {82: 'fortalezas', 109: 'centrosUrbanos', 621: 'centrosUrbanos', 276: 'maravillas'}
 # Material para las perlitas de la crónica: cosas que hizo cada jugador y que suelen dar para chiste
 CURIOSIDADES_POR_EDIFICIO = {50: 'granjas', 70: 'casas', 79: 'torres', 234: 'torres', 235: 'torres', 236: 'torres'}
+# El juego reenvía al empezar el chat de partidas anteriores, con los números de jugador de aquella
+# partida: esos mensajes se atribuirían a cualquiera, así que se descarta el primer minuto y medio.
+CHAT_DESDE_MS = 90000
+# Para leer el desarrollo: órdenes con coordenadas que mueven unidades, y tamaño de cada tramo
+ORDENES_DE_MOVIMIENTO = {'MOVE', 'ORDER', 'DE_ATTACK_MOVE', 'PATROL', 'ATTACK_GROUND'}
+TRAMO_MS = 180000
+EDIFICIOS_SIN_INTERES = {50, 70, 72, 117, 155}  # granjas, casas y muros no cuentan como avanzada
 CURIOSIDADES_POR_ACCION = {
     'DELETE': 'cosasPropiasBorradas', 'FLARE': 'bengalas', 'TOWN_BELL': 'campanazos', 'WALL': 'tramosDeMuro',
     'ATTACK_GROUND': 'ataquesAlSuelo', 'GATE': 'puertasTrabadas', 'DROP_RELIC': 'reliquiasSoltadas',
@@ -96,7 +104,7 @@ def numeros_de_jugador(cabecera, perfiles):
     return numeros
 
 
-def leer(grabacion, perfiles):
+def leer(grabacion, perfiles, equipos):
     """Devuelve (segundos de juego, estadísticas por perfil, mensajes de chat)."""
     largo = struct.unpack_from('<I', grabacion)[0]
     numeros = numeros_de_jugador(zlib.decompress(grabacion[8:largo], wbits=-15), perfiles)
@@ -110,6 +118,9 @@ def leer(grabacion, perfiles):
     curiosidades = collections.defaultdict(collections.Counter)
     colas = collections.defaultdict(collections.Counter)
     ultima = {}
+    construcciones = collections.defaultdict(list)
+    ordenes = []
+    campanazos = []
     pausa = collections.defaultdict(lambda: (0, 0))
     extras = collections.defaultdict(dict)
     chat = []
@@ -128,14 +139,17 @@ def leer(grabacion, perfiles):
                 if aviso:
                     # El juego avisa por chat el momento exacto en que cada jugador sube de edad
                     extras[int(aviso.group(1))].setdefault(EDAD_POR_AVISO[aviso.group(2)], round(ms / 1000))
-                elif texto and not texto.startswith('<') and mensaje.get('player') in numeros:
-                    if mensaje.get('tauntNumber', -1) != -1:
+                elif texto and not texto.startswith('<') and mensaje.get('player') in numeros and ms >= CHAT_DESDE_MS:
+                    burla = mensaje.get('tauntNumber', -1) != -1
+                    if burla:
                         curiosidades[mensaje['player']]['burlasPorChat'] += 1
                     chat.append({
                         't': round(ms / 1000),
                         'jugador': numeros[mensaje['player']],
-                        'canal': 'todos' if mensaje.get('channel') == 0 else 'equipo',
+                        # Canal 0 es el chat del equipo; el 1 lo ven todos
+                        'canal': 'equipo' if mensaje.get('channel') == 0 else 'todos',
                         'texto': texto[:200],
+                        'burla': burla,
                     })
             elif operacion == Operation.ACTION:
                 accion, d = carga
@@ -150,6 +164,13 @@ def leer(grabacion, perfiles):
                 ultima[jugador] = ms
                 if accion.name in CURIOSIDADES_POR_ACCION:
                     curiosidades[jugador][CURIOSIDADES_POR_ACCION[accion.name]] += 1
+                if accion.name == 'TOWN_BELL':
+                    campanazos.append((ms, jugador))
+                if d.get('x', 0) > 0 and 'y' in d:
+                    if accion.name == 'BUILD':
+                        construcciones[jugador].append((ms, d['x'], d['y'], d.get('building_id')))
+                    elif accion.name in ORDENES_DE_MOVIMIENTO:
+                        ordenes.append((ms, jugador, d['x'], d['y']))
                 if accion.name == 'DE_QUEUE':
                     unidad = d.get('unit_id')
                     if unidad in ALDEANOS:
@@ -181,7 +202,7 @@ def leer(grabacion, perfiles):
     minutos = ms / 60000
     if minutos < 1:
         # Partida abandonada apenas empezó: no hay nada que medir
-        return round(ms / 1000), {}, []
+        return round(ms / 1000), {}, [], None
     jugadores = {}
     for numero, perfil in numeros.items():
         s = stats[numero]
@@ -196,27 +217,77 @@ def leer(grabacion, perfiles):
                 'pausaMasLarga': {'segundos': round(pausa[numero][0] / 1000), 'desde': round(pausa[numero][1] / 1000)},
             },
         }
-    return round(ms / 1000), jugadores, chat
+    return round(ms / 1000), jugadores, chat, desarrollo(numeros, equipos, construcciones, ordenes, campanazos, ms)
 
 
-def analizar(grabaciones, perfiles):
-    lecturas = [leer(g, perfiles) for g in grabaciones]
+def desarrollo(numeros, equipos, construcciones, ordenes, campanazos, ms):
+    """Dónde se jugó la partida: cuántas órdenes dio cada equipo en territorio del rival, tramo a tramo.
+
+    La grabación no dice quién ganó cada pelea, pero sí adónde mandó sus unidades cada jugador. Un equipo que
+    deja de dar órdenes en campo rival y solo las da en el propio se está retirando, y ahí se define la partida.
+    El territorio de cada jugador es la zona más cercana a su base (el centro de sus primeras construcciones).
+    """
+    bases = {n: (statistics.median(x for _, x, _, _ in c[:15]), statistics.median(y for _, _, y, _ in c[:15]))
+             for n, c in construcciones.items() if n in numeros and c}
+    if len({equipos.get(numeros[n]) for n in bases}) < 2:
+        return None
+
+    def territorio(x, y):
+        return min(bases, key=lambda n: (bases[n][0] - x) ** 2 + (bases[n][1] - y) ** 2)
+
+    def rival(n, x, y):
+        dueno = territorio(x, y)
+        return dueno if equipos.get(numeros[dueno]) != equipos.get(numeros[n]) else None
+
+    tramos = [{'desde': i * TRAMO_MS // 1000, 'presion': collections.Counter(), 'atacantes': collections.Counter(),
+               'atacados': collections.Counter()} for i in range(ms // TRAMO_MS + 1)]
+    for t, n, x, y in ordenes:
+        if n not in numeros:
+            continue
+        dueno = rival(n, x, y)
+        if dueno:
+            tramo = tramos[t // TRAMO_MS]
+            tramo['presion'][str(equipos[numeros[n]])] += 1
+            tramo['atacantes'][str(numeros[n])] += 1
+            tramo['atacados'][str(numeros[dueno])] += 1
+    for tramo in tramos:
+        tramo['atacantes'] = dict(tramo['atacantes'].most_common(3))
+        tramo['atacados'] = dict(tramo['atacados'].most_common(3))
+
+    avanzadas = []
+    for n, lista in construcciones.items():
+        for t, x, y, edificio in lista:
+            if n in numeros and edificio not in EDIFICIOS_SIN_INTERES and str(edificio) in UNIDADES and rival(n, x, y):
+                avanzadas.append({'t': round(t / 1000), 'jugador': numeros[n], 'edificio': UNIDADES[str(edificio)],
+                                  'enTerritorioDe': numeros[rival(n, x, y)]})
+    return {
+        'tramos': tramos,
+        'edificiosEnTerritorioRival': sorted(avanzadas, key=lambda a: a['t'])[:25],
+        'campanazos': [{'t': round(t / 1000), 'jugador': numeros[n]} for t, n in campanazos if n in numeros][:30],
+    }
+
+
+def analizar(grabaciones, equipos):
+    perfiles = list(equipos)
+    lecturas = [leer(g, perfiles, equipos) for g in grabaciones]
     if not lecturas:
         return None
     # La grabación más larga es la del que se quedó hasta el final
-    segundos, jugadores, _ = max(lecturas, key=lambda l: l[0])
+    segundos, jugadores, _, mapa_de_ordenes = max(lecturas, key=lambda l: l[0])
     if not jugadores:
         # Se guarda igual, sin jugadores, para no volver a bajar las grabaciones en cada corrida
         return {'version': VERSION, 'segundosDeJuego': segundos, 'grabaciones': len(lecturas), 'corta': True, 'chat': []}
     lecturas = [l for l in lecturas if l[1]]
     vistos = {}
-    for _, _, chat in lecturas:
+    for _, _, chat, _ in lecturas:
         for m in chat:
-            vistos.setdefault((m['t'], m['jugador'], m['texto']), m)
+            # La misma burla llega traducida distinto en cada grabación: se deja una sola
+            vistos.setdefault((m['t'], m['jugador'], 'burla' if m['burla'] else m['texto']), m)
     chat = sorted(vistos.values(), key=lambda m: m['t'])
     for m in chat:
         jugadores[str(m['jugador'])]['mensajes'] = jugadores[str(m['jugador'])].get('mensajes', 0) + 1
-    return {'version': VERSION, 'segundosDeJuego': segundos, 'grabaciones': len(lecturas), 'jugadores': jugadores, 'chat': chat}
+    return {'version': VERSION, 'segundosDeJuego': segundos, 'grabaciones': len(lecturas), 'jugadores': jugadores,
+            'chat': chat, 'desarrollo': mapa_de_ordenes}
 
 
 def main():
@@ -238,7 +309,7 @@ def main():
     for fila in pendientes:
         perfiles = [j['id'] for j in fila['datos']['jugadores']]
         grabaciones = bajar_grabaciones(fila['id'], perfiles)
-        detalle = analizar(grabaciones, perfiles) if grabaciones else None
+        detalle = analizar(grabaciones, {j['id']: j['equipo'] for j in fila['datos']['jugadores']}) if grabaciones else None
         if not detalle:
             print(f"{fila['id']}: sin grabación utilizable ({len(grabaciones)} bajadas)")
             continue
