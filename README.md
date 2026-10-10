@@ -35,7 +35,7 @@ openssl rand -hex 32 > ~/.config/campamento-del-age/token && chmod 600 ~/.config
 tr -d '\n' < ~/.config/campamento-del-age/token | sha256sum   # pegar el hash en: update privado.claves set hash = '...' where nombre = 'sincronizador';
 ```
 
-El workflow [`sincronizar.yml`](.github/workflows/sincronizar.yml) quedó como respaldo manual (pasos 1 y 2, sin crónicas) y usa el mismo token desde el secreto `SYNC_TOKEN`.
+El workflow [`sincronizar.yml`](.github/workflows/sincronizar.yml) quedó como respaldo manual (pasos 1 y 2, sin crónicas) y usa el mismo token desde el secreto `SYNC_TOKEN`. Está deshabilitado: para usarlo, `gh workflow enable sincronizar.yml`.
 
 World's Edge solo devuelve ids numéricos de civilización y mapa. Los nombres en español y las imágenes salen de [`data/catalogo.json`](data/catalogo.json), que se arma cruzando las mismas partidas con aoe2companion. Si aparece una civilización o un mapa nuevo, el script lo aprende solo; para reconstruirlo entero: `node scripts/sincronizar.mjs --catalogo`.
 
